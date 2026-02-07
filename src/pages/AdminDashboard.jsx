@@ -5,6 +5,15 @@ import { supabase } from '../lib/supabase';
 // GLOWBOOK ADMIN - FULL PLATFORM CONTROL
 // ============================================
 
+function useBreakpoint() {
+  const [bp, setBp] = useState('desktop');
+  useEffect(() => {
+    const check = () => { const w = window.innerWidth; setBp(w >= 1024 ? 'desktop' : w >= 640 ? 'tablet' : 'mobile'); };
+    check(); window.addEventListener('resize', check); return () => window.removeEventListener('resize', check);
+  }, []);
+  return bp;
+}
+
 const Icons = {
   Dashboard: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   Branch: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -43,7 +52,8 @@ const css = `
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;background:#0F1117;color:#E5E7EB;line-height:1.5}
 .admin{display:flex;min-height:100vh}
-.sidebar{width:260px;background:#1A1D26;border-right:1px solid #2D3039;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform 0.3s}
+.touch-target{min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 .sidebar-header{padding:20px 24px;border-bottom:1px solid #2D3039;display:flex;align-items:center;gap:12px}
 .sidebar-logo{width:36px;height:36px;background:linear-gradient(135deg,#D4A84B,#B8860B);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px}
 .sidebar-brand{font-size:18px;font-weight:700;color:#fff}.sidebar-brand span{color:#D4A84B}
@@ -57,15 +67,12 @@ body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;background:#0F1117
 .admin-profile{display:flex;align-items:center;gap:10px;padding:8px}
 .admin-avatar{width:36px;height:36px;background:#D4A84B;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px}
 .admin-name{font-size:13px;font-weight:600;color:#E5E7EB}.admin-role{font-size:11px;color:#6B7280}
-.main{flex:1;margin-left:260px;min-height:100vh}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:#1A1D26;border-bottom:1px solid #2D3039;position:sticky;top:0;z-index:40}
+.topbar{display:flex;align-items:center;justify-content:space-between;background:#1A1D26;border-bottom:1px solid #2D3039;position:sticky;top:0;z-index:40}
 .topbar-title{font-size:22px;font-weight:700;color:#fff}
 .topbar-actions{display:flex;align-items:center;gap:12px}
 .topbar-search{display:flex;align-items:center;gap:8px;background:#2D3039;border-radius:10px;padding:8px 14px}
 .topbar-search input{background:transparent;border:none;outline:none;color:#E5E7EB;font-size:14px;width:200px}
 .topbar-search input::placeholder{color:#6B7280}
-.mobile-menu{display:none;cursor:pointer;color:#9CA3AF}
-.content{padding:24px 32px}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
 .stat-card{background:#1A1D26;border:1px solid #2D3039;border-radius:14px;padding:20px}
 .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -88,6 +95,7 @@ thead{background:#0F1117}
 th{text-align:left;padding:12px 20px;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px}
 td{padding:14px 20px;border-top:1px solid #2D3039;font-size:14px}
 tr:hover{background:#2D303930}
+.table-responsive{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .bs{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
 .bs.active,.bs.approved,.bs.completed,.bs.resolved{background:#10B98120;color:#10B981}
 .bs.pending,.bs.under_review,.bs.open,.bs.assigned{background:#F59E0B20;color:#F59E0B}
@@ -108,7 +116,7 @@ tr:hover{background:#2D303930}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .card-title{font-size:16px;font-weight:600;color:#fff}
 .fg{margin-bottom:16px}.fl{display:block;font-size:13px;font-weight:500;color:#9CA3AF;margin-bottom:6px}
-.fi,.fs,.fta{width:100%;padding:10px 14px;background:#0F1117;border:1px solid #2D3039;border-radius:8px;color:#E5E7EB;font-size:14px;font-family:inherit}
+.fi,.fs,.fta{width:100%;padding:10px 14px;background:#0F1117;border:1px solid #2D3039;border-radius:8px;color:#E5E7EB;font-size:14px;font-family:inherit;min-height:44px}
 .fi:focus,.fs:focus,.fta:focus{outline:none;border-color:#D4A84B}
 .fta{min-height:80px;resize:vertical}.fs{cursor:pointer}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -125,16 +133,17 @@ tr:hover{background:#2D303930}
 .toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform 0.2s}
 .toggle.on::after{transform:translateX(20px)}
 .tabs{display:flex;gap:4px;margin-bottom:20px;background:#0F1117;border-radius:10px;padding:4px;flex-wrap:wrap}
-.tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:#6B7280}
+.tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:#6B7280;min-height:36px}
 .tab:hover{color:#E5E7EB}.tab.active{background:#2D3039;color:#D4A84B}
 .es{text-align:center;padding:40px;color:#6B7280}
-.toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;animation:si 0.3s}
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;animation:si 0.3s;max-width:90vw}
 .toast.success{background:#10B981;color:#fff}.toast.error{background:#EF4444;color:#fff}
 @keyframes si{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .ri{padding:12px 0;border-bottom:1px solid #2D3039}.ri:last-child{border-bottom:none}
 .ri.internal{background:#3B82F610;border-left:3px solid #3B82F6;padding-left:12px;margin:4px 0;border-radius:0 8px 8px 0}
-@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.mobile-menu{display:block}.stats-grid{grid-template-columns:1fr 1fr}.dg,.fr{grid-template-columns:1fr}.topbar-search{display:none}}
+@media(max-width:639px){.stats-grid{grid-template-columns:1fr 1fr}.dg,.fr{grid-template-columns:1fr}.topbar-search{display:none}td,th{padding:10px 12px;font-size:12px}}
+@media(max-width:1023px){.topbar-search input{width:140px}}
 `;
 
 // ─── IMAGE UPLOAD UTILITY ─────────────────────────────────────────
@@ -237,11 +246,15 @@ function AdminGalleryUpload({ images = [], onUpdate, bucket, folder }) {
 
 export default function AdminDashboard() {
   // ── AUTH STATE ──
+  const bp = useBreakpoint();
   const [authUser, setAuthUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authMode, setAuthMode] = useState('login'); // login | forgot | reset_sent
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPass, setAuthPass] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -508,13 +521,17 @@ export default function AdminDashboard() {
   const ActionBtns = ({children}) => <div style={{display:'flex',gap:4}}>{children}</div>;
 
   // ========== SIDEBAR ==========
-  const Sidebar = () => (
-    <div className={`sidebar ${sidebarOpen?'open':''}`}>
-      <div className="sidebar-header"><div className="sidebar-logo">G</div><div className="sidebar-brand">Glow<span>Book</span> Admin</div></div>
+  const SidebarContent = ({inDrawer}) => (
+    <>
+      <div className="sidebar-header">
+        <div className="sidebar-logo">G</div>
+        <div className="sidebar-brand">Glow<span>Book</span> Admin</div>
+        {inDrawer && <button onClick={()=>setSidebarOpen(false)} className="touch-target" style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#6B7280',fontSize:18}}>✕</button>}
+      </div>
       <nav className="sidebar-nav">
         {navItems.map(sec => <div key={sec.s} className="sidebar-section">
           <div className="sidebar-section-title">{sec.s}</div>
-          {sec.items.map(n => <div key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>{setPage(n.id);setSidebarOpen(false);setTSearch('');}}>
+          {sec.items.map(n => <div key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>{setPage(n.id);setSidebarOpen(false);setTSearch('');}} style={{minHeight: inDrawer ? 48 : 40}}>
             <n.i />{n.l}{n.b && <span className="badge">{n.b}</span>}
           </div>)}
         </div>)}
@@ -522,12 +539,31 @@ export default function AdminDashboard() {
       <div className="sidebar-footer">
         <div className="admin-profile"><div className="admin-avatar">{adminUser?.name?.[0]||'A'}</div><div><div className="admin-name">{adminUser?.name||'Admin'}</div><div className="admin-role">{isDemo ? 'Demo Mode' : adminUser?.role?.replace('_',' ')}</div></div></div>
         {authUser && <div style={{fontSize:11,color:'#6B7280',padding:'4px 8px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{authUser.email}</div>}
-        <button onClick={handleLogout} style={{width:'100%',marginTop:8,padding:'8px 12px',borderRadius:8,border:'1px solid #2D3039',background:'transparent',color:'#9CA3AF',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Plus Jakarta Sans',textAlign:'left'}}>
+        <button onClick={handleLogout} style={{width:'100%',marginTop:8,padding:'10px 12px',borderRadius:8,border:'1px solid #2D3039',background:'transparent',color:'#9CA3AF',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Plus Jakarta Sans',textAlign:'left',minHeight:44}}>
           {isDemo ? '← Exit Demo' : '← Sign Out'}
         </button>
       </div>
+    </>
+  );
+
+  const DesktopSidebar = () => (
+    <div style={{width:260,background:'#1A1D26',borderRight:'1px solid #2D3039',display:'flex',flexDirection:'column',position:'fixed',top:0,left:0,bottom:0,zIndex:50}}>
+      <SidebarContent inDrawer={false} />
     </div>
   );
+
+  const DrawerOverlay = () => {
+    if (!sidebarOpen || bp === 'desktop') return null;
+    return (
+      <div style={{position:'fixed',inset:0,zIndex:1050}}>
+        <div onClick={()=>setSidebarOpen(false)} style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(2px)'}} />
+        <div style={{position:'relative',width:280,maxWidth:'80vw',background:'#1A1D26',height:'100%',display:'flex',flexDirection:'column',animation:'drawerIn .25s ease',boxShadow:'4px 0 24px rgba(0,0,0,.3)'}}>
+          <SidebarContent inDrawer={true} />
+        </div>
+      </div>
+    );
+  };
+
 
   // ========== DASHBOARD ==========
   const Dashboard = () => (
@@ -1118,11 +1154,28 @@ export default function AdminDashboard() {
   if (!authChecked) return <><style>{css}</style><div className="admin"><div style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100%',minHeight:'100vh',color:'#6B7280'}}>Loading...</div></div></>;
 
   if (!authUser && !isDemo) {
-    const is = {width:'100%',padding:'13px 16px',borderRadius:10,border:'1px solid #2D3039',fontSize:14,background:'#0F1117',color:'#E5E7EB',fontFamily:'Plus Jakarta Sans',marginBottom:12,outline:'none',boxSizing:'border-box'};
+    const is = {width:'100%',padding:'13px 16px',borderRadius:10,border:'1px solid #2D3039',fontSize:14,background:'#0F1117',color:'#E5E7EB',fontFamily:'Plus Jakarta Sans',marginBottom:12,outline:'none',boxSizing:'border-box',minHeight:48};
+    const handleAdminLogin = async () => {
+      if (!authEmail||!authPass) { setAuthError('Please fill in all fields'); return; }
+      setAuthError(''); setAuthSubmitting(true);
+      const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPass });
+      if (error) { setAuthSubmitting(false); setAuthError(error.message === 'Email not confirmed' ? 'Please confirm your email first.' : error.message); return; }
+      const { data: admins } = await supabase.from('admin_users').select('email').eq('email', authEmail);
+      if (!admins?.length) { await supabase.auth.signOut(); setAuthSubmitting(false); setAuthError('Access denied. This account is not an admin.'); return; }
+      setAuthSubmitting(false); setAuthUser(data.user);
+    };
+    const handleAdminForgot = async () => {
+      if (!authEmail) { setAuthError('Enter your email'); return; }
+      setAuthError(''); setAuthSubmitting(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: window.location.origin });
+      setAuthSubmitting(false);
+      if (error) { setAuthError(error.message); return; }
+      setAuthMode('reset_sent');
+    };
     return (
       <><style>{css}</style>
-      <div style={{minHeight:'100vh',background:'#0F1117',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <div style={{width:400,padding:40}}>
+      <div style={{minHeight:'100vh',background:'#0F1117',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <div style={{width:'100%',maxWidth:400,padding:bp==='mobile'?24:40}}>
           <div style={{textAlign:'center',marginBottom:32}}>
             <div style={{width:56,height:56,background:'linear-gradient(135deg,#D4A84B,#B8860B)',borderRadius:16,display:'inline-flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:24,marginBottom:16}}>G</div>
             <h1 style={{fontSize:24,fontWeight:700,color:'#fff',marginBottom:4}}>GlowBook Admin</h1>
@@ -1132,41 +1185,24 @@ export default function AdminDashboard() {
           {authMode === 'reset_sent' ? (
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:48,marginBottom:16}}>🔑</div>
-              <p style={{color:'#9CA3AF',fontSize:14,lineHeight:1.6,marginBottom:24}}>A password reset link has been sent to your email.</p>
-              <button onClick={()=>{setAuthMode('login');setAuthError('');}} style={{padding:'10px 24px',borderRadius:10,border:'none',background:'#D4A84B',color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>Back to Login</button>
+              <p style={{color:'#9CA3AF',fontSize:14,lineHeight:1.6,marginBottom:24}}>A password reset link has been sent to <strong style={{color:'#E5E7EB'}}>{authEmail}</strong>.</p>
+              <button onClick={()=>{setAuthMode('login');setAuthError('');}} style={{padding:'12px 24px',borderRadius:10,border:'none',background:'#D4A84B',color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Plus Jakarta Sans',minHeight:44}}>Back to Login</button>
             </div>
           ) : authMode === 'forgot' ? (
             <>
-              <input placeholder="Admin email" type="email" style={is} id="admin-email" onFocus={()=>setAuthError('')} />
-              <button onClick={async () => {
-                const email = document.getElementById('admin-email').value;
-                if (!email) { setAuthError('Enter your email'); return; }
-                setAuthError('');
-                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-                if (error) { setAuthError(error.message); return; }
-                setAuthMode('reset_sent');
-              }} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#D4A84B',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'Plus Jakarta Sans',marginBottom:16}}>Send Reset Link</button>
-              <button onClick={()=>{setAuthMode('login');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#9CA3AF',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>Back to login</button>
+              <input value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setAuthError('');}} placeholder="Admin email" type="email" style={is} />
+              <button onClick={handleAdminForgot} disabled={authSubmitting} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#D4A84B',color:'#fff',fontSize:15,fontWeight:600,cursor:authSubmitting?'not-allowed':'pointer',fontFamily:'Plus Jakarta Sans',marginBottom:16,opacity:authSubmitting?.6:1,minHeight:48}}>{authSubmitting?'Sending…':'Send Reset Link'}</button>
+              <button onClick={()=>{setAuthMode('login');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#9CA3AF',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',minHeight:44}}>Back to login</button>
             </>
           ) : (
             <>
-              <input placeholder="Admin email" type="email" style={is} id="admin-email" onFocus={()=>setAuthError('')} />
-              <input placeholder="Password" type="password" style={is} id="admin-pass"
-                onKeyDown={e => { if (e.key === 'Enter') document.getElementById('admin-login-btn').click(); }} />
-              <button id="admin-login-btn" onClick={async () => {
-                const email = document.getElementById('admin-email').value;
-                const pass = document.getElementById('admin-pass').value;
-                if (!email||!pass) { setAuthError('Please fill in all fields'); return; }
-                setAuthError('');
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-                if (error) { setAuthError(error.message === 'Email not confirmed' ? 'Please confirm your email first.' : error.message); return; }
-                const { data: admins } = await supabase.from('admin_users').select('email').eq('email', email);
-                if (!admins?.length) { await supabase.auth.signOut(); setAuthError('Access denied. This account is not an admin.'); return; }
-                setAuthUser(data.user);
-              }} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#D4A84B',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'Plus Jakarta Sans',marginBottom:12}}>Sign In</button>
-              <button onClick={()=>{setAuthMode('forgot');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#6B7280',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',marginBottom:16}}>Forgot password?</button>
+              <input value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setAuthError('');}} placeholder="Admin email" type="email" style={is} />
+              <input value={authPass} onChange={e=>{setAuthPass(e.target.value);setAuthError('');}} placeholder="Password" type="password" style={is}
+                onKeyDown={e => { if (e.key === 'Enter') handleAdminLogin(); }} />
+              <button onClick={handleAdminLogin} disabled={authSubmitting} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#D4A84B',color:'#fff',fontSize:15,fontWeight:600,cursor:authSubmitting?'not-allowed':'pointer',fontFamily:'Plus Jakarta Sans',marginBottom:12,opacity:authSubmitting?.6:1,minHeight:48}}>{authSubmitting?'Signing in…':'Sign In'}</button>
+              <button onClick={()=>{setAuthMode('forgot');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#6B7280',fontSize:13,cursor:'pointer',fontFamily:'Plus Jakarta Sans',marginBottom:16,minHeight:44}}>Forgot password?</button>
               <div style={{display:'flex',alignItems:'center',gap:12,margin:'4px 0 16px'}}><div style={{flex:1,height:1,background:'#2D3039'}}/><span style={{fontSize:12,color:'#6B7280'}}>OR</span><div style={{flex:1,height:1,background:'#2D3039'}}/></div>
-              <button onClick={()=>setIsDemo(true)} style={{width:'100%',padding:'12px',borderRadius:10,border:'1px solid #2D3039',background:'transparent',color:'#6B7280',fontSize:14,fontWeight:500,cursor:'pointer',fontFamily:'Plus Jakarta Sans'}}>Continue with Demo Access</button>
+              <button onClick={()=>setIsDemo(true)} style={{width:'100%',padding:'12px',borderRadius:10,border:'1px solid #2D3039',background:'transparent',color:'#6B7280',fontSize:14,fontWeight:500,cursor:'pointer',fontFamily:'Plus Jakarta Sans',minHeight:48}}>Continue with Demo Access</button>
             </>
           )}
         </div>
@@ -1180,19 +1216,24 @@ export default function AdminDashboard() {
     <>
       <style>{css}</style>
       <div className="admin">
-        <Sidebar />
-        <div className="main">
-          <div className="topbar">
-            <div style={{display:'flex',alignItems:'center',gap:16}}>
-              <div className="mobile-menu" onClick={()=>setSidebarOpen(!sidebarOpen)}><Icons.Menu /></div>
-              <span className="topbar-title">{titles[page]}</span>
+        {bp === 'desktop' && <DesktopSidebar />}
+        <DrawerOverlay />
+        <div style={{flex:1,marginLeft: bp === 'desktop' ? 260 : 0,minHeight:'100vh'}}>
+          <div className="topbar" style={{padding: bp === 'desktop' ? '16px 32px' : '12px 16px'}}>
+            <div style={{display:'flex',alignItems:'center',gap: bp === 'desktop' ? 16 : 10}}>
+              {bp !== 'desktop' && (
+                <button onClick={()=>setSidebarOpen(!sidebarOpen)} className="touch-target" style={{background:'none',border:'none',cursor:'pointer',color:'#9CA3AF'}}>
+                  <Icons.Menu />
+                </button>
+              )}
+              <span className="topbar-title" style={{fontSize: bp === 'mobile' ? 16 : 22}}>{titles[page]}</span>
             </div>
             <div className="topbar-actions">
-              <div className="topbar-search"><Icons.Search /><input placeholder="Search..." value={searchQ} onChange={e=>setSearchQ(e.target.value)}/></div>
+              {bp !== 'mobile' && <div className="topbar-search"><Icons.Search /><input placeholder="Search..." value={searchQ} onChange={e=>setSearchQ(e.target.value)}/></div>}
               <button className="btn-icon" title="Refresh" onClick={fetchAll}><Icons.Refresh /></button>
             </div>
           </div>
-          <div className="content">
+          <div style={{padding: bp === 'desktop' ? '24px 32px' : bp === 'tablet' ? '20px 24px' : '16px 12px'}}>
             {page==='dashboard'&&<Dashboard />}
             {page==='activity'&&<ActivityLog />}
             {page==='branches'&&<Branches />}
