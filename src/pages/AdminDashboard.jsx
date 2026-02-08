@@ -41,8 +41,6 @@ const Icons = {
   Clock: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
   Phone: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
   CreditCard: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-  RecycleBin: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
-  Restore: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>,
 };
 
 const FP = (a) => `K${(Number(a)||0).toLocaleString()}`;
@@ -265,7 +263,7 @@ export default function AdminDashboard() {
   const [editSettings, setEditSettings] = useState(null);
 
   // Data stores
-  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], blockedTimes:[], favorites:[], recycleBin:[] });
+  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], wallets:[] });
   const [adminUser, setAdminUser] = useState(null);
 
   // ── AUTH CHECK ──
@@ -299,7 +297,7 @@ export default function AdminDashboard() {
   const fetchAll = async () => {
     setLoading(true);
     const q = (t) => supabase.from(t).select('*');
-    const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,bt,fav,rb] = await Promise.all([
+    const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,wd,wa] = await Promise.all([
       q('branches').order('created_at',{ascending:false}),
       q('clients').order('created_at',{ascending:false}),
       q('staff').order('created_at',{ascending:false}),
@@ -326,11 +324,10 @@ export default function AdminDashboard() {
       q('invoices').order('created_at',{ascending:false}),
       q('sms_logs').order('created_at',{ascending:false}).limit(100),
       q('salon_subscriptions').order('created_at',{ascending:false}),
-      q('staff_blocked_times').order('block_date',{ascending:false}),
-      q('client_favorites'),
-      q('recycle_bin').order('deleted_at',{ascending:false}),
+      q('withdrawals').order('created_at',{ascending:false}),
+      q('wallets'),
     ]);
-    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], blockedTimes:bt.data||[], favorites:fav.data||[], recycleBin:rb.data||[] };
+    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], wallets:wa.data||[] };
     setD(d);
     // Match admin user by auth email, or fall back to first admin
     if (authUser) {
@@ -352,33 +349,12 @@ export default function AdminDashboard() {
   const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '-';
   const fmtDT = d => d ? new Date(d).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '-';
 
-  // ── Fuzzy Search ──
-  const fuzzyMatch = (query, text) => {
-    if (!query || !text) return !query;
-    const q = query.toLowerCase().trim(), t = String(text).toLowerCase();
-    if (t.includes(q)) return true;
-    const qWords = q.split(/\s+/), tWords = t.split(/\s+/);
-    return qWords.every(qw => tWords.some(tw => {
-      if (tw.includes(qw) || qw.includes(tw)) return true;
-      const maxDist = qw.length <= 3 ? 1 : qw.length <= 6 ? 2 : 3;
-      let prev = Array.from({length:tw.length+1},(_,i)=>i);
-      for (let i=1;i<=qw.length;i++){
-        const curr=[i];
-        for(let j=1;j<=tw.length;j++) curr[j]=Math.min(prev[j]+1,curr[j-1]+1,prev[j-1]+(qw[i-1]!==tw[j-1]?1:0));
-        prev=curr;
-      }
-      if(prev[tw.length]<=maxDist) return true;
-      if(qw.length>=2 && qw.length<=4 && tw.startsWith(qw)) return true;
-      return false;
-    }));
-  };
-
   const filter = (items, fields) => {
-    const q = (tSearch||searchQ).trim();
+    const q = (tSearch||searchQ).toLowerCase();
     if (!q) return items;
     return items.filter(item => fields.some(f => {
       const v = typeof f === 'function' ? f(item) : item[f];
-      return v && fuzzyMatch(q, String(v));
+      return v && String(v).toLowerCase().includes(q);
     }));
   };
 
@@ -406,6 +382,7 @@ export default function AdminDashboard() {
     openTickets: D.tickets.filter(t=>t.status==='open'||t.status==='assigned'||t.status==='in_progress').length,
     pendingReports: D.reports.filter(r=>r.status==='pending').length,
     pendingApps: D.applications.filter(a=>a.status==='pending').length,
+    pendingWithdrawals: D.withdrawals.filter(w=>w.status==='pending'||w.status==='processing').length,
   }), [D]);
 
   // ============ ALL ACTIONS ============
@@ -521,197 +498,9 @@ export default function AdminDashboard() {
     await supabase.from('notification_templates').update({body:form.body,subject:form.subject,is_active:form.is_active}).eq('id',form.id);
     await log('Template updated','template',form.id); showToast('Template saved'); closeModal(); fetchAll();
   };
-  const deleteItem = async (table, id, label) => {
-    // Soft delete: copy record to recycle_bin, then remove from original table
-    const { data: record } = await supabase.from(table).select('*').eq('id', id).single();
-    if (record) {
-      await supabase.from('recycle_bin').insert({
-        table_name: table,
-        record_id: id,
-        record_data: record,
-        display_name: record.name || record.title || record.ticket_number || label,
-        deleted_by: authUser?.id || null,
-      });
-    }
-    await supabase.from(table).delete().eq('id', id);
-    await log(`${label} moved to recycle bin`, label, id); showToast(`${label} moved to recycle bin 🗑️`); fetchAll();
-  };
-
-  const restoreItem = async (binEntry) => {
-    const { table_name, record_id, record_data } = binEntry;
-    // Remove internal fields that might conflict
-    const cleanData = { ...record_data };
-    // Re-insert into original table
-    const { error } = await supabase.from(table_name).insert(cleanData);
-    if (error) { showToast(`Restore failed: ${error.message}`, 'error'); return; }
-    // Remove from recycle bin
-    await supabase.from('recycle_bin').delete().eq('id', binEntry.id);
-    await log(`Restored ${binEntry.display_name} from recycle bin`, table_name, record_id);
-    showToast(`${binEntry.display_name} restored! ♻️`); fetchAll();
-  };
-
-  const permanentDelete = async (binEntry) => {
-    await supabase.from('recycle_bin').delete().eq('id', binEntry.id);
-    await log(`Permanently deleted ${binEntry.display_name}`, binEntry.table_name, binEntry.record_id);
-    showToast(`Permanently deleted`); fetchAll();
-  };
-
-  const emptyRecycleBin = async () => {
-    await supabase.from('recycle_bin').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await log('Emptied recycle bin', 'recycle_bin', null);
-    showToast('Recycle bin emptied'); fetchAll();
-  };
-
-  // ── BRANCH: Create new ──
-  const createBranch = async () => {
-    const {name,location,phone,email,description,open_time,close_time,slot_interval,owner_email,owner_phone,cancellation_hours,cancellation_fee_percent,no_show_fee_percent,sms_enabled,sms_sender_name,sms_reminder_hours} = form;
-    if (!name||!location) { showToast('Name and location required','error'); return; }
-    const { error } = await supabase.from('branches').insert({
-      name,location,phone,email,description,open_time:open_time||'08:00',close_time:close_time||'18:00',
-      slot_interval:parseInt(slot_interval)||30,owner_email,owner_phone,
-      cancellation_hours:parseInt(cancellation_hours)||2,cancellation_fee_percent:parseInt(cancellation_fee_percent)||0,
-      no_show_fee_percent:parseInt(no_show_fee_percent)||50,
-      sms_enabled:!!sms_enabled,sms_sender_name:sms_sender_name||'GlowBook',sms_reminder_hours:parseInt(sms_reminder_hours)||24,
-      approval_status:'approved',is_active:true,approved_by:adminUser?.id,approved_at:new Date().toISOString()
-    });
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Branch created','branch',null,{name}); showToast('Branch created'); closeModal(); fetchAll();
-  };
-
-  // ── BRANCH: Save all fields ──
-  const saveBranchFull = async () => {
-    if (!sel?.id) return;
-    const { error } = await supabase.from('branches').update({
-      name:form.name,location:form.location,phone:form.phone,email:form.email,
-      description:form.description,open_time:form.open_time,close_time:form.close_time,
-      slot_interval:parseInt(form.slot_interval)||30,images:form.images,
-      owner_email:form.owner_email,owner_phone:form.owner_phone,
-      cancellation_hours:parseInt(form.cancellation_hours)||2,
-      cancellation_fee_percent:parseInt(form.cancellation_fee_percent)||0,
-      no_show_fee_percent:parseInt(form.no_show_fee_percent)||50,
-      sms_enabled:!!form.sms_enabled,sms_sender_name:form.sms_sender_name||'GlowBook',
-      sms_reminder_hours:parseInt(form.sms_reminder_hours)||24,
-      updated_at:new Date().toISOString()
-    }).eq('id',sel.id);
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Branch updated (full)','branch',sel.id); showToast('Branch updated'); closeModal(); fetchAll();
-  };
-
-  // ── BRANCH: Suspend with reason ──
-  const suspendBranch = async () => {
-    if (!sel?.id||!form.suspension_reason?.trim()) { showToast('Reason required','error'); return; }
-    await supabase.from('branches').update({approval_status:'suspended',is_active:false,suspension_reason:form.suspension_reason}).eq('id',sel.id);
-    await log('Branch suspended','branch',sel.id,{reason:form.suspension_reason}); showToast('Branch suspended'); closeModal(); fetchAll();
-  };
-
-  // ── BRANCH: Reactivate ──
-  const reactivateBranch = async (id) => {
-    await supabase.from('branches').update({approval_status:'approved',is_active:true,suspension_reason:null}).eq('id',id);
-    await log('Branch reactivated','branch',id); showToast('Branch reactivated'); fetchAll();
-  };
-
-  // ── STAFF: Create ──
-  const createStaff = async () => {
-    const {name,role,phone,email,branch_id,bio,years_experience,specialties,working_days,start_time,end_time} = form;
-    if (!name||!role||!branch_id) { showToast('Name, role and branch required','error'); return; }
-    const spec = specialties ? specialties.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    const wd = working_days || [1,2,3,4,5];
-    const { error } = await supabase.from('staff').insert({
-      name,role,phone,email,branch_id,bio,
-      years_experience:parseInt(years_experience)||0,specialties:spec,
-      working_days:wd,start_time:start_time||'09:00',end_time:end_time||'17:00',is_active:true
-    });
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Staff created','staff',null,{name,branch_id}); showToast('Staff member created'); closeModal(); fetchAll();
-  };
-
-  // ── STAFF: Edit ──
-  const saveStaff = async () => {
-    if (!sel?.id) return;
-    const spec = typeof form.specialties === 'string' ? form.specialties.split(',').map(s=>s.trim()).filter(Boolean) : (form.specialties||[]);
-    const { error } = await supabase.from('staff').update({
-      name:form.name,role:form.role,phone:form.phone,email:form.email,branch_id:form.branch_id,
-      bio:form.bio,years_experience:parseInt(form.years_experience)||0,specialties:spec,
-      working_days:form.working_days,start_time:form.start_time,end_time:form.end_time,
-      profile_photo:form.profile_photo||null,updated_at:new Date().toISOString()
-    }).eq('id',sel.id);
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Staff updated','staff',sel.id); showToast('Staff updated'); closeModal(); fetchAll();
-  };
-
-  // ── STAFF: Toggle active ──
-  const toggleStaff = async (id,active) => {
-    await supabase.from('staff').update({is_active:active}).eq('id',id);
-    await log(`Staff ${active?'activated':'deactivated'}`,'staff',id); showToast(`Staff ${active?'activated':'deactivated'}`); fetchAll();
-  };
-
-  // ── BOOKING: Create on behalf ──
-  const createBookingAdmin = async () => {
-    const {client_id,branch_id,service_id,staff_id,booking_date,booking_time,duration,total_amount,client_notes} = form;
-    if (!client_id||!branch_id||!service_id||!booking_date||!booking_time) { showToast('Fill required fields','error'); return; }
-    const { error } = await supabase.from('bookings').insert({
-      client_id,branch_id,service_id,staff_id:staff_id||null,
-      booking_date,booking_time,duration:parseInt(duration)||60,
-      total_amount:parseFloat(total_amount)||0,client_notes,
-      status:'confirmed',admin_override:true,override_by:adminUser?.id,
-      override_reason:'Created by admin'
-    });
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Booking created by admin','booking',null,{client_id,service_id}); showToast('Booking created'); closeModal(); fetchAll();
-  };
-
-  // ── BOOKING: Reschedule ──
-  const rescheduleBooking = async () => {
-    if (!sel?.id||!form.booking_date||!form.booking_time) { showToast('Date and time required','error'); return; }
-    const { error } = await supabase.from('bookings').update({
-      booking_date:form.booking_date,booking_time:form.booking_time,
-      admin_override:true,override_by:adminUser?.id,override_reason:'Rescheduled by admin',
-      updated_at:new Date().toISOString()
-    }).eq('id',sel.id);
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Booking rescheduled','booking',sel.id,{date:form.booking_date,time:form.booking_time}); showToast('Booking rescheduled'); closeModal(); fetchAll();
-  };
-
-  // ── BOOKING: Reassign staff ──
-  const reassignBookingStaff = async () => {
-    if (!sel?.id) return;
-    const { error } = await supabase.from('bookings').update({
-      staff_id:form.staff_id||null,admin_override:true,override_by:adminUser?.id,
-      override_reason:'Staff reassigned by admin',updated_at:new Date().toISOString()
-    }).eq('id',sel.id);
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Booking staff reassigned','booking',sel.id,{staff_id:form.staff_id}); showToast('Staff reassigned'); closeModal(); fetchAll();
-  };
-
-  // ── CLIENT: Edit profile ──
-  const saveClient = async () => {
-    if (!sel?.id) return;
-    const { error } = await supabase.from('clients').update({
-      name:form.name,phone:form.phone,email:form.email,notes:form.notes,
-      updated_at:new Date().toISOString()
-    }).eq('id',sel.id);
-    if (error) { showToast(error.message,'error'); return; }
-    await log('Client profile updated','client',sel.id); showToast('Client updated'); closeModal(); fetchAll();
-  };
-
-  // ── CLIENT: Ban ──
-  const banClient = async () => {
-    if (!sel?.id||!form.suspension_reason?.trim()) { showToast('Reason required','error'); return; }
-    await supabase.from('clients').update({account_status:'banned',suspension_reason:form.suspension_reason,suspended_by:adminUser?.id}).eq('id',sel.id);
-    await log('Client banned','client',sel.id,{reason:form.suspension_reason}); showToast('Client banned'); closeModal(); fetchAll();
-  };
-
-  // ── CLIENT: Suspend ──
-  const suspendClient = async () => {
-    if (!sel?.id||!form.suspension_reason?.trim()) { showToast('Reason required','error'); return; }
-    await supabase.from('clients').update({account_status:'suspended',suspension_reason:form.suspension_reason,suspended_by:adminUser?.id}).eq('id',sel.id);
-    await log('Client suspended','client',sel.id,{reason:form.suspension_reason}); showToast('Client suspended'); closeModal(); fetchAll();
-  };
-
-  // ── CLIENT: Reactivate ──
-  const reactivateClient = async (id) => {
-    await supabase.from('clients').update({account_status:'active',suspension_reason:null,suspended_by:null}).eq('id',id);
-    await log('Client reactivated','client',id); showToast('Client reactivated'); fetchAll();
+  const deleteItem = async (table,id,label) => {
+    await supabase.from(table).delete().eq('id',id);
+    await log(`${label} deleted`,label,id); showToast(`${label} deleted`); fetchAll();
   };
 
   // Navigation
@@ -719,11 +508,11 @@ export default function AdminDashboard() {
     {s:'Overview',items:[{id:'dashboard',l:'Dashboard',i:Icons.Dashboard},{id:'activity',l:'Activity Log',i:Icons.Activity}]},
     {s:'Management',items:[{id:'branches',l:'Branches',i:Icons.Branch,b:stats.pendingApps||null},{id:'services',l:'Services',i:Icons.Star},{id:'clients',l:'Clients',i:Icons.Users},{id:'bookings',l:'Bookings',i:Icons.Calendar},{id:'staff',l:'Staff',i:Icons.Users},{id:'waitlist',l:'Waitlist',i:Icons.Calendar},{id:'referrals',l:'Referrals',i:Icons.Gift}]},
     {s:'Moderation',items:[{id:'reviews',l:'Reviews',i:Icons.Star},{id:'disputes',l:'Disputes',i:Icons.Alert,b:stats.openDisputes||null},{id:'tickets',l:'Support Tickets',i:Icons.Ticket,b:stats.openTickets||null},{id:'reports',l:'Reported Content',i:Icons.Flag,b:stats.pendingReports||null}]},
-    {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'GlowPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
+    {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'withdrawals',l:'Withdrawals',i:Icons.CreditCard,b:stats.pendingWithdrawals||null},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'GlowPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
     {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone}]},
-    {s:'System',items:[{id:'recycleBin',l:'Recycle Bin',i:Icons.RecycleBin,b:D.recycleBin.length||null},{id:'settings',l:'Settings',i:Icons.Settings}]},
+    {s:'System',items:[{id:'settings',l:'Settings',i:Icons.Settings}]},
   ];
-  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Management',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',recycleBin:'Recycle Bin'};
+  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program'};
 
   // Shared components
   const TF = ({ph}) => <div className="tf"><Icons.Search /><input placeholder={ph||'Filter...'} value={tSearch} onChange={e=>setTSearch(e.target.value)} /></div>;
@@ -763,6 +552,15 @@ export default function AdminDashboard() {
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Reviews</span><div className="stat-icon purple"><Icons.Star /></div></div><div className="stat-value">{stats.totalReviews}</div><div className="stat-change up">Avg: {stats.avgRating} ★</div></div>
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Open Issues</span><div className="stat-icon red"><Icons.Alert /></div></div><div className="stat-value">{stats.openDisputes+stats.openTickets}</div><div className="stat-change down">{stats.openDisputes} disputes, {stats.openTickets} tickets</div></div>
       </div>
+      {stats.pendingWithdrawals > 0 && (
+        <div style={{background:'#fff8e1',border:'1.5px solid #ffe082',borderRadius:12,padding:'14px 20px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}} onClick={()=>setPage('withdrawals')}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>💸</span>
+            <div><span style={{fontWeight:700,fontSize:14,color:'#6d5600'}}>{stats.pendingWithdrawals} pending payout{stats.pendingWithdrawals!==1?'s':''}</span><span style={{fontSize:13,color:'#8a6d00',marginLeft:8}}>require manual payment</span></div>
+          </div>
+          <button className="btn btn-sm" style={{background:'#e65100',color:'#fff'}}>Review Now →</button>
+        </div>
+      )}
       <div className="tc"><div className="th"><span className="tt">Recent Bookings</span><button className="btn btn-secondary btn-sm" onClick={()=>setPage('bookings')}>View All</button></div>
         <table><thead><tr><th>Client</th><th>Service</th><th>Branch</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
           {D.bookings.slice(0,5).map(b=><tr key={b.id}><td>{clName(b.client_id)}</td><td>{svName(b.service_id)}</td><td>{brName(b.branch_id)}</td><td>{b.booking_date} {b.booking_time}</td><td>{FP(b.total_amount)}</td><td><Badge s={b.status}/></td></tr>)}
@@ -787,7 +585,6 @@ export default function AdminDashboard() {
     const f = filter(D.branches,['name','location','email']);
     const pending = D.applications.filter(a=>a.status==='pending');
     return (<div>
-      <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-branch',null,{name:'',location:'',phone:'',email:'',open_time:'08:00',close_time:'18:00',slot_interval:30,description:'',owner_email:'',owner_phone:'',cancellation_hours:2,cancellation_fee_percent:0,no_show_fee_percent:50,sms_enabled:false,sms_sender_name:'GlowBook',sms_reminder_hours:24})}><Icons.Plus /> Add Branch</button></div>
       {pending.length>0 && <div className="card" style={{borderColor:'#c9a84c'}}>
         <div className="card-header"><span className="card-title" style={{color:'#c9a84c'}}>Pending Applications ({pending.length})</span></div>
         {pending.map(a=><div key={a.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0',borderBottom:'1px solid #ede5df'}}>
@@ -796,19 +593,16 @@ export default function AdminDashboard() {
         </div>)}
       </div>}
       <div className="tc"><div className="th"><span className="tt">All Branches ({f.length})</span><TF ph="Search branches..."/></div>
-        <table><thead><tr><th>Name</th><th>Location</th><th>Owner</th><th>Rating</th><th>Staff</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {f.map(b=>{const bStaff=D.staff.filter(s=>s.branch_id===b.id);
-            return <tr key={b.id}><td><div style={{display:'flex',alignItems:'center',gap:10}}>
+        <table><thead><tr><th>Name</th><th>Location</th><th>Rating</th><th>Reviews</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+          {f.map(b=><tr key={b.id}><td><div style={{display:'flex',alignItems:'center',gap:10}}>
             <div style={{width:40,height:28,borderRadius:6,overflow:'hidden',background:'#f0ebe7',flexShrink:0}}>
               {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#8a7068'}}>⌂</div>}
             </div>
             <span style={{fontWeight:600,color:'#2c1810'}}>{b.name}</span>
-          </div></td><td>{b.location}</td><td style={{fontSize:12}}>{b.owner_email||'-'}</td><td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'} ★</td><td>{bStaff.length}</td><td><Badge s={b.approval_status||'approved'}/></td>
-            <td><ActionBtns>
-              <button className="btn-icon" onClick={()=>openModal('branch-detail',b)}><Icons.Eye /></button>
-              <button className="btn-icon" title="Edit" onClick={()=>openModal('edit-branch',b,{name:b.name,location:b.location,phone:b.phone,email:b.email,description:b.description||'',open_time:b.open_time,close_time:b.close_time,slot_interval:b.slot_interval||30,images:b.images||[],owner_email:b.owner_email||'',owner_phone:b.owner_phone||'',cancellation_hours:b.cancellation_hours??2,cancellation_fee_percent:b.cancellation_fee_percent??0,no_show_fee_percent:b.no_show_fee_percent??50,sms_enabled:!!b.sms_enabled,sms_sender_name:b.sms_sender_name||'GlowBook',sms_reminder_hours:b.sms_reminder_hours??24})}><Icons.Edit /></button>
-              {b.approval_status!=='suspended'?<button className="btn-icon" title="Suspend" onClick={()=>openModal('suspend-branch',b,{suspension_reason:''})}><Icons.X /></button>:<button className="btn-icon" title="Reactivate" onClick={()=>reactivateBranch(b.id)}><Icons.Check /></button>}
-            </ActionBtns></td></tr>;})}
+          </div></td><td>{b.location}</td><td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'} ★</td><td>{b.review_count||0}</td><td><Badge s={b.approval_status||'approved'}/></td>
+            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('branch-detail',b)}><Icons.Eye /></button>
+              {b.approval_status!=='suspended'?<button className="btn-icon" onClick={()=>updateBranch(b.id,'suspended')}><Icons.X /></button>:<button className="btn-icon" onClick={()=>updateBranch(b.id,'approved')}><Icons.Check /></button>}
+            </ActionBtns></td></tr>)}
         </tbody></table>
       </div>
     </div>);
@@ -821,11 +615,9 @@ export default function AdminDashboard() {
       <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Bookings</th><th>GlowPoints</th><th>Spent</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {f.map(c=><tr key={c.id}><td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td><td>{c.phone}</td><td>{c.email||'-'}</td><td>{c.total_bookings||0}</td><td style={{color:'#c47d5a',fontWeight:600}}>{c.glow_points||0}</td><td>{FP(c.total_spent||0)}</td><td><Badge s={c.account_status||'active'}/></td>
           <td><ActionBtns>
-            <button className="btn-icon" title="View Details" onClick={()=>openModal('client-detail',c)}><Icons.Eye /></button>
-            <button className="btn-icon" title="Edit Profile" onClick={()=>openModal('edit-client',c,{name:c.name,phone:c.phone,email:c.email||'',notes:c.notes||''})}><Icons.Edit /></button>
+            <button className="btn-icon" onClick={()=>openModal('client-detail',c)}><Icons.Eye /></button>
             <button className="btn-icon" title="Adjust Points" onClick={()=>openModal('adjust-points',c,{points:'',reason:''})}><Icons.Sparkles /></button>
-            {(c.account_status||'active')==='active'&&<><button className="btn-icon" title="Suspend" onClick={()=>openModal('suspend-client',c,{suspension_reason:''})}><Icons.X /></button><button className="btn-icon" title="Ban" style={{color:'#c94c4c'}} onClick={()=>openModal('ban-client',c,{suspension_reason:''})}><Icons.NoShow /></button></>}
-            {(c.account_status==='suspended'||c.account_status==='banned')&&<button className="btn-icon" title="Reactivate" onClick={()=>reactivateClient(c.id)}><Icons.Check /></button>}
+            {(c.account_status||'active')!=='banned'?<button className="btn-icon" onClick={()=>updateClient(c.id,'suspended')}><Icons.X /></button>:<button className="btn-icon" onClick={()=>updateClient(c.id,'active')}><Icons.Check /></button>}
           </ActionBtns></td></tr>)}
         {!f.length && <tr><td colSpan="8" className="es">No clients found</td></tr>}
       </tbody></table>
@@ -836,23 +628,18 @@ export default function AdminDashboard() {
   const Bookings = () => {
     const f = filter(D.bookings,[b=>clName(b.client_id),b=>svName(b.service_id),b=>brName(b.branch_id),'status']);
     return (<div>
-      <div style={{marginBottom:16,display:'flex',gap:8,flexWrap:'wrap'}}>
-        <button className="btn btn-primary" onClick={()=>openModal('create-booking',null,{client_id:'',branch_id:'',service_id:'',staff_id:'',booking_date:'',booking_time:'',duration:60,total_amount:0,client_notes:''})}><Icons.Plus /> Create Booking</button>
-        <button className="btn btn-secondary" onClick={()=>openModal('create-refund')}><Icons.Dollar /> Issue Refund</button>
-      </div>
+      <div style={{marginBottom:16}}><button className="btn btn-primary btn-sm" onClick={()=>openModal('create-refund')}><Icons.Plus /> Issue Refund</button></div>
       <div className="tc"><div className="th"><span className="tt">All Bookings ({f.length})</span><TF ph="Search bookings..."/></div>
-        <table><thead><tr><th>Client</th><th>Service</th><th>Branch</th><th>Staff</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {f.map(b=><tr key={b.id}><td>{clName(b.client_id)}{b.is_walk_in&&<span style={{fontSize:10,color:'#c9a84c',marginLeft:4}}>WALK-IN</span>}</td><td>{svName(b.service_id)}</td><td>{brName(b.branch_id)}</td><td>{stName(b.staff_id)}</td><td>{b.booking_date} {b.booking_time}</td><td>{FP(b.total_amount)}{b.discount_amount>0&&<div style={{fontSize:10,color:'#c9a84c'}}>-{FP(b.discount_amount)}</div>}</td><td><Badge s={b.status}/></td>
+        <table><thead><tr><th>Client</th><th>Service</th><th>Branch</th><th>Staff</th><th>Date</th><th>Amount</th><th>Deposit</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+          {f.map(b=><tr key={b.id}><td>{clName(b.client_id)}{b.is_walk_in&&<span style={{fontSize:10,color:'#c9a84c',marginLeft:4}}>WALK-IN</span>}</td><td>{svName(b.service_id)}</td><td>{brName(b.branch_id)}</td><td>{stName(b.staff_id)}</td><td>{b.booking_date} {b.booking_time}</td><td>{FP(b.total_amount)}{b.discount_amount>0&&<div style={{fontSize:10,color:'#c9a84c'}}>-{FP(b.discount_amount)}</div>}</td><td>{b.deposit_paid?<span style={{color:'#4a9d6e'}}>Paid</span>:<span style={{color:'#c94c4c'}}>No</span>}</td><td><Badge s={b.status}/></td>
             <td><ActionBtns>
               <button className="btn-icon" onClick={()=>openModal('booking-detail',b)}><Icons.Eye /></button>
-              {(b.status==='pending'||b.status==='confirmed')&&<button className="btn-icon" title="Reschedule" onClick={()=>openModal('reschedule-booking',b,{booking_date:b.booking_date,booking_time:b.booking_time})}><Icons.Calendar /></button>}
-              {(b.status==='pending'||b.status==='confirmed')&&<button className="btn-icon" title="Reassign Staff" onClick={()=>openModal('reassign-staff',b,{staff_id:b.staff_id||''})}><Icons.Users /></button>}
               {b.status==='pending'&&<button className="btn-icon" onClick={()=>updateBooking(b.id,'confirmed')}><Icons.Check /></button>}
               {b.status==='confirmed'&&<button className="btn-icon" title="Mark Arrived" onClick={()=>updateBooking(b.id,'arrived')} style={{color:'#00695c'}}><Icons.Check /></button>}
               {(b.status==='arrived'||b.status==='in_progress')&&<button className="btn-icon" title="Complete" onClick={()=>updateBooking(b.id,'completed')} style={{color:'#4a9d6e'}}><Icons.Check /></button>}
               {(b.status==='confirmed'||b.status==='pending')&&<><button className="btn-icon" onClick={()=>updateBooking(b.id,'cancelled')}><Icons.X /></button><button className="btn-icon" title="No-show" onClick={()=>updateBooking(b.id,'no_show')} style={{color:'#880e4f'}}><Icons.NoShow /></button></>}
             </ActionBtns></td></tr>)}
-          {!f.length && <tr><td colSpan="8" className="es">No bookings found</td></tr>}
+          {!f.length && <tr><td colSpan="9" className="es">No bookings found</td></tr>}
         </tbody></table>
       </div>
       {D.refunds.length>0 && <div className="tc"><div className="th"><span className="tt">Refunds ({D.refunds.length})</span></div>
@@ -866,30 +653,17 @@ export default function AdminDashboard() {
   // ========== STAFF ==========
   const Staff = () => {
     const f = filter(D.staff,['name','role',s=>brName(s.branch_id)]);
-    const dayNames = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    return (<div>
-      <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-staff',null,{name:'',role:'stylist',phone:'',email:'',branch_id:'',bio:'',years_experience:0,specialties:'',working_days:[1,2,3,4,5],start_time:'09:00',end_time:'17:00'})}><Icons.Plus /> Add Staff</button></div>
-      <div className="tc"><div className="th"><span className="tt">All Staff ({f.length})</span><TF ph="Search staff..."/></div>
-      <table><thead><tr><th>Name</th><th>Role</th><th>Branch</th><th>Schedule</th><th>Rating</th><th>Bookings</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {f.map(s=>{
-          const wdStr = (s.working_days||[]).map(d=>dayNames[d]||d).join(', ');
-          const blocked = D.blockedTimes.filter(bt=>bt.staff_id===s.id);
-          return <tr key={s.id}><td><div style={{display:'flex',alignItems:'center',gap:10}}>
+    return (<div className="tc"><div className="th"><span className="tt">All Staff ({f.length})</span><TF ph="Search staff..."/></div>
+      <table><thead><tr><th>Name</th><th>Role</th><th>Branch</th><th>Rating</th><th>Bookings</th><th>Status</th></tr></thead><tbody>
+        {f.map(s=><tr key={s.id}><td><div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{width:32,height:32,borderRadius:'50%',overflow:'hidden',background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
             {s.profile_photo ? <img src={s.profile_photo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <span style={{color:'#8a7068',fontSize:12,fontWeight:600}}>{s.name?.[0]}</span>}
           </div>
           <span style={{fontWeight:600,color:'#2c1810'}}>{s.name}</span>
-        </div></td><td>{s.role}</td><td>{brName(s.branch_id)}</td>
-        <td style={{fontSize:11,color:'#8a7068'}}>{wdStr}<br/>{s.start_time}–{s.end_time}{blocked.length>0&&<span style={{color:'#c94c4c',marginLeft:4}}>({blocked.length} blocked)</span>}</td>
-        <td style={{color:'#c9a84c'}}>{s.rating?.toFixed(1)||'0.0'} ★</td><td>{s.bookings_completed||0}</td><td><Badge s={s.is_active?'active':'suspended'}/></td>
-        <td><ActionBtns>
-          <button className="btn-icon" title="Edit" onClick={()=>openModal('edit-staff',s,{name:s.name,role:s.role,phone:s.phone||'',email:s.email||'',branch_id:s.branch_id,bio:s.bio||'',years_experience:s.years_experience||0,specialties:(s.specialties||[]).join(', '),working_days:s.working_days||[1,2,3,4,5],start_time:s.start_time||'09:00',end_time:s.end_time||'17:00',profile_photo:s.profile_photo||''})}><Icons.Edit /></button>
-          {s.is_active?<button className="btn-icon" title="Deactivate" onClick={()=>toggleStaff(s.id,false)}><Icons.X /></button>:<button className="btn-icon" title="Activate" onClick={()=>toggleStaff(s.id,true)}><Icons.Check /></button>}
-          <button className="btn-icon" style={{color:'#c62828'}} title="Delete" onClick={()=>{if(confirm(`Move "${s.name}" to recycle bin?`))deleteItem('staff',s.id,'Staff')}}><Icons.Trash /></button>
-        </ActionBtns></td></tr>;})}
-        {!f.length && <tr><td colSpan="8" className="es">No staff found</td></tr>}
+        </div></td><td>{s.role}</td><td>{brName(s.branch_id)}</td><td style={{color:'#c9a84c'}}>{s.rating?.toFixed(1)||'0.0'} ★</td><td>{s.bookings_completed||0}</td><td><Badge s={s.is_active?'active':'suspended'}/></td></tr>)}
+        {!f.length && <tr><td colSpan="6" className="es">No staff found</td></tr>}
       </tbody></table>
-    </div></div>);
+    </div>);
   };
 
   // ========== REVIEWS ==========
@@ -965,6 +739,130 @@ export default function AdminDashboard() {
     </div>
   );
 
+  // ========== WITHDRAWALS (Manual Payout Management) ==========
+  const Withdrawals = () => {
+    const [confirmAction, setConfirmAction] = useState(null);
+    const [processing, setProcessing] = useState(null);
+    const [wdFilter, setWdFilter] = useState('pending');
+
+    const pending = D.withdrawals.filter(w=>w.status==='pending'||w.status==='processing');
+    const completed = D.withdrawals.filter(w=>w.status==='completed');
+    const rejected = D.withdrawals.filter(w=>w.status==='rejected'||w.status==='failed');
+    const totalPaidOut = completed.reduce((s,w)=>s+(parseFloat(w.amount)||0),0);
+    const totalPending = pending.reduce((s,w)=>s+(parseFloat(w.amount)||0),0);
+
+    const filteredWds = wdFilter==='pending' ? pending : wdFilter==='completed' ? completed : wdFilter==='rejected' ? rejected : D.withdrawals;
+    const searchedWds = filter(filteredWds, [w=>brName(w.branch_id), 'withdraw_to_phone', 'withdraw_to_name', 'network', 'status']);
+
+    const processWithdrawal = async (id, action) => {
+      setProcessing(id);
+      try {
+        if (action === 'mark_paid') {
+          await supabase.from('withdrawals').update({status:'completed', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
+          const wd = D.withdrawals.find(w=>w.id===id);
+          if (wd) {
+            await supabase.from('wallets').update({total_withdrawn: (D.wallets.find(w=>w.branch_id===wd.branch_id)?.total_withdrawn||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
+          }
+          await log('Withdrawal marked as paid','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
+          showToast('Withdrawal marked as paid ✓');
+        } else {
+          const wd = D.withdrawals.find(w=>w.id===id);
+          await supabase.from('withdrawals').update({status:'rejected', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
+          if (wd) {
+            const wallet = D.wallets.find(w=>w.branch_id===wd.branch_id);
+            if (wallet) {
+              await supabase.from('wallets').update({balance: (parseFloat(wallet.balance)||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
+            }
+          }
+          await log('Withdrawal rejected','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
+          showToast('Withdrawal rejected — funds returned to wallet');
+        }
+        fetchAll();
+      } catch(e) { showToast('Error: '+e.message,'error'); }
+      setProcessing(null);
+      setConfirmAction(null);
+    };
+
+    return (<div>
+      <div className="stats-grid">
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Pending Payouts</span><div className="stat-icon" style={{background:'#fff3e0',color:'#e65100'}}><Icons.Clock /></div></div><div className="stat-value">{pending.length}</div><div className="stat-change">{FP(totalPending)} awaiting payment</div></div>
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Total Paid Out</span><div className="stat-icon green"><Icons.Check /></div></div><div className="stat-value">{FP(totalPaidOut)}</div><div className="stat-change up">{completed.length} completed</div></div>
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Rejected</span><div className="stat-icon red"><Icons.X /></div></div><div className="stat-value">{rejected.length}</div></div>
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">All Time</span><div className="stat-icon gold"><Icons.Dollar /></div></div><div className="stat-value">{D.withdrawals.length}</div></div>
+      </div>
+
+      {/* Pending payouts requiring action */}
+      {pending.length > 0 && (
+        <div style={{background:'#fff8e1',border:'1.5px solid #ffe082',borderRadius:12,padding:'16px 20px',marginBottom:20,display:'flex',alignItems:'flex-start',gap:10}}>
+          <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+          <div>
+            <div style={{fontWeight:700,fontSize:14,color:'#6d5600',marginBottom:2}}>Manual Payouts Required</div>
+            <div style={{fontSize:13,color:'#8a6d00',lineHeight:1.5}}>There are <strong>{pending.length}</strong> pending withdrawal requests totalling <strong>{FP(totalPending)}</strong>. Send the funds via mobile money to each recipient, then click <strong>"Mark as Paid"</strong> to confirm. Click "Reject" to return funds to the salon's wallet.</div>
+          </div>
+        </div>
+      )}
+
+      <div className="tc">
+        <div className="th">
+          <span className="tt">Withdrawal Requests ({searchedWds.length})</span>
+          <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            {[{k:'pending',l:'Pending',c:'#e65100'},{k:'completed',l:'Paid',c:'#2e7d32'},{k:'rejected',l:'Rejected',c:'#c94c4c'},{k:'all',l:'All',c:'#8a7068'}].map(f=>
+              <button key={f.k} onClick={()=>setWdFilter(f.k)} style={{padding:'5px 12px',borderRadius:8,border:wdFilter===f.k?'none':`1.5px solid #ede5df`,background:wdFilter===f.k?f.c:'transparent',color:wdFilter===f.k?'#fff':f.c,fontSize:12,fontWeight:600,cursor:'pointer'}}>{f.l}</button>
+            )}
+            <TF ph="Search withdrawals..."/>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Branch</th><th>Amount</th><th>Phone</th><th>Name</th><th>Network</th><th>Status</th><th>Requested</th><th style={{minWidth:200}}>Actions</th></tr></thead>
+          <tbody>
+            {searchedWds.map(wd=>(
+              <tr key={wd.id} style={{background: (wd.status==='pending'||wd.status==='processing') ? '#fffdf5' : 'transparent'}}>
+                <td style={{fontWeight:600,color:'#2c1810'}}>{brName(wd.branch_id)}</td>
+                <td style={{fontWeight:700,color:'#2c1810',fontSize:15}}>{FP(wd.amount)}</td>
+                <td style={{fontWeight:600,color:'#c47d5a'}}>{wd.withdraw_to_phone||'-'}</td>
+                <td>{wd.withdraw_to_name||'-'}</td>
+                <td style={{textTransform:'uppercase',fontSize:12,fontWeight:600}}>{wd.network||'-'}</td>
+                <td><span className={`bs ${wd.status==='completed'?'completed':wd.status==='rejected'||wd.status==='failed'?'rejected':'pending'}`}>{wd.status==='completed'?'Paid ✓':wd.status}</span></td>
+                <td style={{fontSize:12}}>{fmtDT(wd.created_at)}</td>
+                <td>
+                  {(wd.status==='pending'||wd.status==='processing') ? (
+                    confirmAction?.id===wd.id ? (
+                      <div style={{background:'#fff',border:`1.5px solid ${confirmAction.type==='mark_paid'?'#4a9d6e':'#c94c4c'}`,borderRadius:10,padding:12,minWidth:220}}>
+                        <div style={{fontSize:12,fontWeight:700,marginBottom:6,color:'#2c1810'}}>
+                          {confirmAction.type==='mark_paid'?'✅ Confirm Payment Sent':'❌ Confirm Rejection'}
+                        </div>
+                        <div style={{fontSize:11,color:'#8a7068',marginBottom:10,lineHeight:1.5}}>
+                          {confirmAction.type==='mark_paid'
+                            ? `Have you sent ${FP(wd.amount)} to ${wd.withdraw_to_phone} (${(wd.network||'mobile').toUpperCase()})?`
+                            : `Reject this payout of ${FP(wd.amount)}? Funds will be returned to ${brName(wd.branch_id)}'s wallet.`}
+                        </div>
+                        <div style={{display:'flex',gap:6}}>
+                          <button disabled={processing===wd.id} className={`btn btn-sm ${confirmAction.type==='mark_paid'?'btn-success':'btn-danger'}`}
+                            onClick={()=>processWithdrawal(wd.id,confirmAction.type)}
+                            style={{opacity:processing===wd.id?0.5:1}}
+                          >{processing===wd.id?'Processing...':confirmAction.type==='mark_paid'?"Yes, I've Paid":'Yes, Reject'}</button>
+                          <button className="btn btn-secondary btn-sm" onClick={()=>setConfirmAction(null)}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <ActionBtns>
+                        <button className="btn btn-success btn-sm" onClick={()=>setConfirmAction({id:wd.id,type:'mark_paid'})}>✓ Mark as Paid</button>
+                        <button className="btn btn-danger btn-sm" onClick={()=>setConfirmAction({id:wd.id,type:'reject'})}>Reject</button>
+                      </ActionBtns>
+                    )
+                  ) : (
+                    <span style={{fontSize:11,color:'#8a7068'}}>{wd.processed_at ? `Processed ${fmtDT(wd.processed_at)}` : '—'}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {!searchedWds.length && <tr><td colSpan="8" className="es">No withdrawals found</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>);
+  };
+
   // ========== GLOWPOINTS ==========
   const Points = () => {
     const circ = D.clients.reduce((s,c)=>s+(c.glow_points||0),0);
@@ -992,7 +890,7 @@ export default function AdminDashboard() {
       <div className="tc"><div className="th"><span className="tt">Promotions ({D.promos.length})</span></div>
         <table><thead><tr><th>Name</th><th>Type</th><th>Code</th><th>Value</th><th>Uses</th><th>Active</th><th>Period</th><th>Actions</th></tr></thead><tbody>
           {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'∞'}</td><td>{p.is_active?'✅':'❌'}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
-            <td><button className="btn-icon" style={{color:'#c62828'}} onClick={()=>{if(confirm(`Move "${p.name}" to recycle bin?`))deleteItem('promotions',p.id,'Promotion')}}><Icons.Trash /></button></td></tr>)}
+            <td><button className="btn-icon" onClick={()=>deleteItem('promotions',p.id,'Promotion')}><Icons.Trash /></button></td></tr>)}
           {!D.promos.length && <tr><td colSpan="8" className="es">No promotions</td></tr>}
         </tbody></table>
       </div>
@@ -1006,7 +904,7 @@ export default function AdminDashboard() {
       <div className="tc"><div className="th"><span className="tt">Announcements ({D.announcements.length})</span></div>
         <table><thead><tr><th>Title</th><th>Message</th><th>Target</th><th>Priority</th><th>Active</th><th>Created</th><th>Actions</th></tr></thead><tbody>
           {D.announcements.map(a=><tr key={a.id}><td style={{fontWeight:600,color:'#2c1810'}}>{a.title}</td><td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.message}</td><td>{a.target}</td><td><Badge s={a.priority==='urgent'?'cancelled':a.priority==='high'?'pending':'active'}/></td><td>{a.is_active?'✅':'❌'}</td><td>{fmtD(a.created_at)}</td>
-            <td><button className="btn-icon" style={{color:'#c62828'}} onClick={()=>{if(confirm(`Move "${a.title}" to recycle bin?`))deleteItem('platform_announcements',a.id,'Announcement')}}><Icons.Trash /></button></td></tr>)}
+            <td><button className="btn-icon" onClick={()=>deleteItem('platform_announcements',a.id,'Announcement')}><Icons.Trash /></button></td></tr>)}
           {!D.announcements.length && <tr><td colSpan="7" className="es">No announcements</td></tr>}
         </tbody></table>
       </div>
@@ -1043,7 +941,7 @@ export default function AdminDashboard() {
             <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
             <td>{s.branch_id ? brName(s.branch_id) : 'All'}</td>
             <td><Badge s={s.is_active?'active':'suspended'}/></td>
-            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,price_max:s.price_max||0,duration:s.duration||30,duration_max:s.duration_max||60,deposit:s.deposit||0,image:s.image||'',branch_id:s.branch_id||'',is_active:s.is_active})}><Icons.Edit /></button><button className="btn-icon" style={{color:'#c62828'}} onClick={()=>{if(confirm(`Move "${s.name}" to recycle bin?`))deleteItem('services',s.id,'Service')}}><Icons.Trash /></button></ActionBtns></td>
+            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,price_max:s.price_max||0,duration:s.duration||30,duration_max:s.duration_max||60,deposit:s.deposit||0,image:s.image||'',branch_id:s.branch_id||'',is_active:s.is_active})}><Icons.Edit /></button></ActionBtns></td>
           </tr>)}
         </tbody></table>
       </div>
@@ -1226,143 +1124,42 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== RECYCLE BIN ==========
-  const TABLE_LABELS = {services:'Service',branches:'Branch',staff:'Staff',clients:'Client',bookings:'Booking',reviews:'Review',promotions:'Promotion',platform_announcements:'Announcement',disputes:'Dispute',support_tickets:'Ticket',reported_content:'Report',waitlist:'Waitlist Entry',referrals:'Referral',invoices:'Invoice'};
-  const RecycleBin = () => {
-    const [binFilter, setBinFilter] = useState('all');
-    const [binSearch, setBinSearch] = useState('');
-    const items = D.recycleBin.filter(r => {
-      if (binFilter !== 'all' && r.table_name !== binFilter) return false;
-      if (binSearch) return fuzzyMatch(binSearch, r.display_name) || fuzzyMatch(binSearch, r.table_name);
-      return true;
-    });
-    const tables = [...new Set(D.recycleBin.map(r => r.table_name))].sort();
-    const daysLeft = (expires) => { const d = Math.ceil((new Date(expires) - new Date()) / 86400000); return d > 0 ? d : 0; };
-    const timeAgo = (dt) => { const mins = Math.floor((Date.now() - new Date(dt)) / 60000); if (mins < 60) return `${mins}m ago`; if (mins < 1440) return `${Math.floor(mins/60)}h ago`; return `${Math.floor(mins/1440)}d ago`; };
-
-    return (<div>
-      <div className="stats-grid">
-        <div className="stat-card"><div className="stat-header"><span className="stat-label">Items in Bin</span><div className="stat-icon gold"><Icons.RecycleBin /></div></div><div className="stat-value">{D.recycleBin.length}</div></div>
-        <div className="stat-card"><div className="stat-header"><span className="stat-label">Tables Affected</span><div className="stat-icon blue"><Icons.Activity /></div></div><div className="stat-value">{tables.length}</div></div>
-        <div className="stat-card"><div className="stat-header"><span className="stat-label">Auto-purge</span><div className="stat-icon green"><Icons.Clock /></div></div><div className="stat-value">30 days</div><div className="stat-change">Items expire automatically</div></div>
-      </div>
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Recycle Bin ({items.length})</span>
-          <div style={{display:'flex',gap:8}}>
-            {D.recycleBin.length > 0 && <button className="btn btn-sm" style={{background:'#c62828',color:'#fff',border:'none'}} onClick={() => { if(confirm('Permanently delete ALL items? This cannot be undone.')) emptyRecycleBin(); }}><Icons.Trash /> Empty Bin</button>}
-          </div>
-        </div>
-        <div style={{display:'flex',gap:10,padding:'0 0 16px',flexWrap:'wrap',alignItems:'center'}}>
-          <div style={{flex:1,maxWidth:300,display:'flex',alignItems:'center',gap:8,background:'#faf7f5',borderRadius:8,padding:'0 12px',border:'1px solid #ede5df'}}>
-            <Icons.Search /><input placeholder="Search deleted items..." value={binSearch} onChange={e=>setBinSearch(e.target.value)} style={{border:'none',background:'none',padding:'10px 0',fontSize:13,width:'100%',outline:'none',color:'#2c1810'}} />
-          </div>
-          <select value={binFilter} onChange={e=>setBinFilter(e.target.value)} style={{padding:'8px 12px',borderRadius:8,border:'1px solid #ede5df',fontSize:13,background:'#faf7f5',color:'#2c1810',cursor:'pointer'}}>
-            <option value="all">All types</option>
-            {tables.map(t => <option key={t} value={t}>{TABLE_LABELS[t] || t} ({D.recycleBin.filter(r=>r.table_name===t).length})</option>)}
-          </select>
-        </div>
-        {items.length === 0 ? <div style={{padding:48,textAlign:'center',color:'#8a7068'}}><div style={{fontSize:40,marginBottom:12}}>🗑️</div><div style={{fontSize:16,fontWeight:600,marginBottom:4}}>Recycle bin is empty</div><div style={{fontSize:13}}>Deleted items will appear here for 30 days</div></div> :
-        <table><thead><tr><th>Name</th><th>Type</th><th>Deleted</th><th>Expires In</th><th style={{textAlign:'center'}}>Preview</th><th>Actions</th></tr></thead><tbody>
-          {items.map(r => {
-            const dl = daysLeft(r.expires_at);
-            return (<tr key={r.id}>
-              <td style={{fontWeight:600,color:'#2c1810'}}>{r.display_name || '(unnamed)'}</td>
-              <td><Badge s={r.table_name==='services'?'confirmed':r.table_name==='staff'?'arrived':r.table_name==='branches'?'active':'pending'}/><span style={{marginLeft:6,fontSize:12}}>{TABLE_LABELS[r.table_name]||r.table_name}</span></td>
-              <td style={{fontSize:12,color:'#8a7068'}}>{timeAgo(r.deleted_at)}</td>
-              <td>{dl <= 3 ? <span style={{color:'#c62828',fontWeight:600,fontSize:13}}>{dl}d left</span> : <span style={{fontSize:13}}>{dl} days</span>}</td>
-              <td style={{textAlign:'center'}}><button className="btn-icon" title="Preview data" onClick={()=>{ alert(JSON.stringify(r.record_data, null, 2).slice(0,800)); }}><Icons.Eye /></button></td>
-              <td><ActionBtns>
-                <button className="btn btn-sm" style={{background:'#4a9d6e',color:'#fff',border:'none',display:'flex',alignItems:'center',gap:4}} onClick={()=>{ if(confirm(`Restore "${r.display_name}" to ${TABLE_LABELS[r.table_name]||r.table_name}s?`)) restoreItem(r); }}><Icons.Restore /> Restore</button>
-                <button className="btn-icon" style={{color:'#c62828'}} title="Delete permanently" onClick={()=>{ if(confirm(`Permanently delete "${r.display_name}"? This cannot be undone.`)) permanentDelete(r); }}><Icons.Trash /></button>
-              </ActionBtns></td>
-            </tr>);
-          })}
-        </tbody></table>}
-      </div>
-    </div>);
-  };
-
   // ========== MODALS ==========
   const Modal = () => {
     if (!modal) return null;
     const replies = sel ? D.ticketReplies.filter(r=>r.ticket_id===sel.id) : [];
-    const modalTitles = {'branch-detail':`Branch: ${sel?.name}`,'edit-branch':`Edit Branch: ${sel?.name||''}`,'create-branch':'Create New Branch','suspend-branch':`Suspend Branch`,'create-service':'Create Service','edit-service':`Edit: ${sel?.name}`,'client-detail':`Client: ${sel?.name}`,'edit-client':`Edit Client: ${sel?.name||''}`,'suspend-client':'Suspend Client','ban-client':'Ban Client','booking-detail':'Booking Details','create-booking':'Create Booking','reschedule-booking':'Reschedule Booking','reassign-staff':'Reassign Staff','review-detail':'Review Details','dispute-detail':'Dispute — Resolve','ticket-detail':`Ticket: ${sel?.ticket_number}`,'adjust-points':`Adjust Points: ${sel?.name}`,'create-refund':'Issue Refund','create-announcement':'Create Announcement','create-promo':'Create Promotion','create-admin':'Add Admin User','edit-page':`Edit Page: ${form.title||''}`,'edit-template':`Edit Template: ${sel?.name?.replace(/_/g,' ')||''}`,'create-staff':'Add Staff Member','edit-staff':`Edit Staff: ${sel?.name||''}`};
+    const modalTitles = {'branch-detail':`Branch: ${sel?.name}`,'edit-branch':`Edit Branch: ${sel?.name}`,'create-service':'Create Service','edit-service':`Edit: ${sel?.name}`,'client-detail':`Client: ${sel?.name}`,'booking-detail':'Booking Details','review-detail':'Review Details','dispute-detail':'Dispute — Resolve','ticket-detail':`Ticket: ${sel?.ticket_number}`,'adjust-points':`Adjust Points: ${sel?.name}`,'create-refund':'Issue Refund','create-announcement':'Create Announcement','create-promo':'Create Promotion','create-admin':'Add Admin User','edit-page':`Edit Page: ${form.title||''}`,'edit-template':`Edit Template: ${sel?.name?.replace(/_/g,' ')||''}`};
 
     return (
       <div className="mo" onClick={closeModal}><div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="mh"><span className="mt">{modalTitles[modal]||''}</span><div style={{cursor:'pointer',color:'#8a7068'}} onClick={closeModal}><Icons.X /></div></div>
         <div className="mb">
 
-          {/* BRANCH DETAIL - TABBED */}
+          {/* BRANCH DETAIL */}
           {modal==='branch-detail'&&sel&&<div>
-            <div className="tabs" style={{marginBottom:16}}>{['info','staff','services','bookings'].map(t=><div key={t} className={`tab ${(form._tab||'info')===t?'active':''}`} onClick={()=>uf('_tab',t)}>{t.charAt(0).toUpperCase()+t.slice(1)} ({t==='staff'?D.staff.filter(s=>s.branch_id===sel.id).length:t==='services'?D.services.filter(s=>s.branch_id===sel.id||!s.branch_id).length:t==='bookings'?D.bookings.filter(b=>b.branch_id===sel.id).length:''})</div>)}</div>
-            {(form._tab||'info')==='info'&&<div>
-              {sel.images?.length > 0 && <div style={{display:'flex',gap:8,marginBottom:16,overflowX:'auto'}}>
-                {sel.images.map((img,i) => <img key={i} src={img} alt="" style={{width:140,height:90,borderRadius:10,objectFit:'cover',flexShrink:0}} />)}
-              </div>}
-              <div className="dg">
-              {[['Name',sel.name],['Location',sel.location],['Phone',sel.phone],['Email',sel.email],['Owner Email',sel.owner_email],['Owner Phone',sel.owner_phone],['Rating',`${sel.rating} ★ (${sel.review_count} reviews)`],['Hours',`${sel.open_time} - ${sel.close_time}`],['Slot Interval',`${sel.slot_interval||30} min`],['Cancel Window',`${sel.cancellation_hours??2} hrs`],['Cancel Fee',`${sel.cancellation_fee_percent??0}%`],['No-Show Fee',`${sel.no_show_fee_percent??50}%`],['SMS',sel.sms_enabled?`✅ ${sel.sms_sender_name} (${sel.sms_reminder_hours}h)`:' Off']].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v||'-'}</div></div>)}
-              <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.approval_status||'approved'}/></div></div>
-              {sel.suspension_reason&&<div className="di"><div className="dl">Suspension Reason</div><div className="dv" style={{color:'#c94c4c'}}>{sel.suspension_reason}</div></div>}
-              <div className="di"><div className="dl">Created</div><div className="dv">{fmtD(sel.created_at)}</div></div>
-              <div className="di" style={{gridColumn:'span 2'}}><div className="dl">Description</div><div className="dv">{sel.description||'-'}</div></div>
-              </div>
+            {sel.images?.length > 0 && <div style={{display:'flex',gap:8,marginBottom:16,overflowX:'auto'}}>
+              {sel.images.map((img,i) => <img key={i} src={img} alt="" style={{width:140,height:90,borderRadius:10,objectFit:'cover',flexShrink:0}} />)}
             </div>}
-            {form._tab==='staff'&&<div>
-              {D.staff.filter(s=>s.branch_id===sel.id).map(s=><div key={s.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #ede5df'}}>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:32,height:32,borderRadius:'50%',background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:600,color:'#8a7068'}}>{s.name?.[0]}</div>
-                  <div><div style={{fontWeight:600,color:'#2c1810'}}>{s.name}</div><div style={{fontSize:12,color:'#8a7068'}}>{s.role} · {s.rating?.toFixed(1)||'0.0'}★ · {s.bookings_completed||0} bookings</div></div>
-                </div>
-                <Badge s={s.is_active?'active':'suspended'}/>
-              </div>)}
-              {!D.staff.filter(s=>s.branch_id===sel.id).length&&<div className="es">No staff at this branch</div>}
-            </div>}
-            {form._tab==='services'&&<div>
-              {D.services.filter(s=>s.branch_id===sel.id||!s.branch_id).map(s=><div key={s.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #ede5df'}}>
-                <div><div style={{fontWeight:600,color:'#2c1810'}}>{s.name}</div><div style={{fontSize:12,color:'#8a7068'}}>{s.category||'-'} · {s.duration}–{s.duration_max||s.duration} min</div></div>
-                <div style={{textAlign:'right'}}><div style={{fontWeight:600,color:'#c47d5a'}}>{FP(s.price)}{s.price_max>s.price?`–${FP(s.price_max)}`:''}</div><Badge s={s.is_active?'active':'suspended'}/></div>
-              </div>)}
-            </div>}
-            {form._tab==='bookings'&&<div>
-              {D.bookings.filter(b=>b.branch_id===sel.id).slice(0,20).map(b=><div key={b.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #ede5df'}}>
-                <div><div style={{fontWeight:600,color:'#2c1810'}}>{clName(b.client_id)} — {svName(b.service_id)}</div><div style={{fontSize:12,color:'#8a7068'}}>{b.booking_date} {b.booking_time} · {stName(b.staff_id)}</div></div>
-                <div style={{textAlign:'right'}}><div style={{fontWeight:600}}>{FP(b.total_amount)}</div><Badge s={b.status}/></div>
-              </div>)}
-              {!D.bookings.filter(b=>b.branch_id===sel.id).length&&<div className="es">No bookings at this branch</div>}
-            </div>}
+            <div className="dg">
+            {[['Name',sel.name],['Location',sel.location],['Phone',sel.phone],['Email',sel.email],['Rating',`${sel.rating} ★ (${sel.review_count} reviews)`],['Hours',`${sel.open_time} - ${sel.close_time}`],['Slot Interval',`${sel.slot_interval||30} min`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v||'-'}</div></div>)}
+            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.approval_status||'approved'}/></div></div>
+            <div className="di"><div className="dl">Created</div><div className="dv">{fmtD(sel.created_at)}</div></div>
+            <div className="di" style={{gridColumn:'span 2'}}><div className="dl">Description</div><div className="dv">{sel.description||'-'}</div></div>
+            </div>
+            <div style={{marginTop:12}}><button className="btn btn-primary btn-sm" onClick={()=>openModal('edit-branch',sel,{name:sel.name,location:sel.location,phone:sel.phone,email:sel.email,description:sel.description||'',open_time:sel.open_time,close_time:sel.close_time,slot_interval:sel.slot_interval||30,images:sel.images||[]})}>Edit Branch</button></div>
           </div>}
 
-          {/* EDIT BRANCH - ALL FIELDS */}
-          {(modal==='edit-branch'||modal==='create-branch')&&<div>
-            {modal==='edit-branch'&&sel&&<AdminGalleryUpload images={form.images||[]} bucket="branches" folder={sel.id} onUpdate={urls=>uf('images',urls)} />}
-            <div style={{fontSize:13,fontWeight:600,color:'#c47d5a',marginBottom:8}}>Basic Info</div>
+          {/* EDIT BRANCH */}
+          {modal==='edit-branch'&&sel&&<div>
+            <AdminGalleryUpload images={form.images||[]} bucket="branches" folder={sel.id} onUpdate={urls=>uf('images',urls)} />
             <div className="fr">
-              <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Location *</label><input className="fi" value={form.location||''} onChange={e=>uf('location',e.target.value)}/></div>
+              <div className="fg"><label className="fl">Name</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
+              <div className="fg"><label className="fl">Location</label><input className="fi" value={form.location||''} onChange={e=>uf('location',e.target.value)}/></div>
               <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div>
               <div className="fg"><label className="fl">Email</label><input className="fi" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Owner Email</label><input className="fi" type="email" value={form.owner_email||''} onChange={e=>uf('owner_email',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Owner Phone</label><input className="fi" value={form.owner_phone||''} onChange={e=>uf('owner_phone',e.target.value)}/></div>
-            </div>
-            <div style={{fontSize:13,fontWeight:600,color:'#c47d5a',marginBottom:8,marginTop:8}}>Schedule</div>
-            <div className="fr">
               <div className="fg"><label className="fl">Opens At</label><input className="fi" type="time" value={form.open_time||''} onChange={e=>uf('open_time',e.target.value)}/></div>
               <div className="fg"><label className="fl">Closes At</label><input className="fi" type="time" value={form.close_time||''} onChange={e=>uf('close_time',e.target.value)}/></div>
               <div className="fg"><label className="fl">Slot Interval</label><select className="fs" value={form.slot_interval||30} onChange={e=>uf('slot_interval',parseInt(e.target.value))}><option value={15}>15 min</option><option value={20}>20 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
-            </div>
-            <div style={{fontSize:13,fontWeight:600,color:'#c47d5a',marginBottom:8,marginTop:8}}>Policies</div>
-            <div className="fr">
-              <div className="fg"><label className="fl">Cancellation Window (hrs)</label><input className="fi" type="number" value={form.cancellation_hours??2} onChange={e=>uf('cancellation_hours',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Cancellation Fee (%)</label><input className="fi" type="number" value={form.cancellation_fee_percent??0} onChange={e=>uf('cancellation_fee_percent',e.target.value)}/></div>
-              <div className="fg"><label className="fl">No-Show Fee (%)</label><input className="fi" type="number" value={form.no_show_fee_percent??50} onChange={e=>uf('no_show_fee_percent',e.target.value)}/></div>
-            </div>
-            <div style={{fontSize:13,fontWeight:600,color:'#c47d5a',marginBottom:8,marginTop:8}}>SMS Settings</div>
-            <div className="fr">
-              <div className="fg"><label className="fl">SMS Enabled</label><div className={`toggle ${form.sms_enabled?'on':''}`} onClick={()=>uf('sms_enabled',!form.sms_enabled)}/></div>
-              <div className="fg"><label className="fl">Sender Name</label><input className="fi" value={form.sms_sender_name||''} onChange={e=>uf('sms_sender_name',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Reminder Hours</label><input className="fi" type="number" value={form.sms_reminder_hours??24} onChange={e=>uf('sms_reminder_hours',e.target.value)}/></div>
             </div>
             <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
           </div>}
@@ -1390,35 +1187,11 @@ export default function AdminDashboard() {
             <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
           </div>}
 
-          {/* CLIENT DETAIL - TABBED */}
-          {modal==='client-detail'&&sel&&<div>
-            <div className="tabs" style={{marginBottom:16}}>{['info','bookings','reviews','favorites'].map(t=><div key={t} className={`tab ${(form._tab||'info')===t?'active':''}`} onClick={()=>uf('_tab',t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</div>)}</div>
-            {(form._tab||'info')==='info'&&<div className="dg">
-              {[['Name',sel.name],['Phone',sel.phone],['Email',sel.email||'-'],['Referral Code',sel.referral_code||'-'],['Total Bookings',sel.total_bookings||0],['Total Spent',FP(sel.total_spent||0)],['Last Booking',fmtD(sel.last_booking_at)],['Joined',fmtD(sel.created_at)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-              <div className="di"><div className="dl">GlowPoints</div><div className="dv" style={{color:'#c47d5a',fontSize:18,fontWeight:700}}>{sel.glow_points||0}</div></div>
-              <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.account_status||'active'}/></div></div>
-              {sel.suspension_reason&&<div className="di" style={{gridColumn:'span 2'}}><div className="dl">Suspension Reason</div><div className="dv" style={{color:'#c94c4c'}}>{sel.suspension_reason}</div></div>}
-              {sel.notes&&<div className="di" style={{gridColumn:'span 2'}}><div className="dl">Notes</div><div className="dv">{sel.notes}</div></div>}
-            </div>}
-            {form._tab==='bookings'&&<div>
-              {D.bookings.filter(b=>b.client_id===sel.id).map(b=><div key={b.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #ede5df'}}>
-                <div><div style={{fontWeight:600,color:'#2c1810'}}>{svName(b.service_id)} — {brName(b.branch_id)}</div><div style={{fontSize:12,color:'#8a7068'}}>{b.booking_date} {b.booking_time} · {stName(b.staff_id)}</div></div>
-                <div style={{textAlign:'right'}}><div style={{fontWeight:600}}>{FP(b.total_amount)}</div><Badge s={b.status}/></div>
-              </div>)}
-              {!D.bookings.filter(b=>b.client_id===sel.id).length&&<div className="es">No bookings</div>}
-            </div>}
-            {form._tab==='reviews'&&<div>
-              {D.reviews.filter(r=>r.client_id===sel.id).map(r=><div key={r.id} style={{padding:'12px 0',borderBottom:'1px solid #ede5df'}}>
-                <div style={{display:'flex',justifyContent:'space-between'}}><span style={{fontWeight:600,color:'#2c1810'}}>{brName(r.branch_id)}</span><span style={{color:'#c9a84c'}}>{(r.rating_average||r.rating_overall||0).toFixed(1)} ★</span></div>
-                <div style={{fontSize:13,color:'#8a7068',marginTop:4}}>{r.review_text||'No text'}</div>
-                <div style={{fontSize:11,color:'#8a7068',marginTop:4}}>{fmtD(r.created_at)} · <Badge s={r.moderation_status||'approved'}/></div>
-              </div>)}
-              {!D.reviews.filter(r=>r.client_id===sel.id).length&&<div className="es">No reviews</div>}
-            </div>}
-            {form._tab==='favorites'&&<div>
-              {D.favorites.filter(f=>f.client_id===sel.id).map(f=>{const br=D.branches.find(b=>b.id===f.branch_id); return <div key={f.id} style={{padding:'10px 0',borderBottom:'1px solid #ede5df'}}><span style={{fontWeight:600,color:'#2c1810'}}>{br?.name||'Unknown'}</span><span style={{color:'#8a7068',marginLeft:8,fontSize:12}}>{br?.location}</span></div>;})}
-              {!D.favorites.filter(f=>f.client_id===sel.id).length&&<div className="es">No favorites</div>}
-            </div>}
+          {/* CLIENT DETAIL */}
+          {modal==='client-detail'&&sel&&<div className="dg">
+            {[['Name',sel.name],['Phone',sel.phone],['Email',sel.email||'-'],['Bookings',sel.total_bookings||0],['Spent',FP(sel.total_spent||0)],['Joined',fmtD(sel.created_at)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
+            <div className="di"><div className="dl">GlowPoints</div><div className="dv" style={{color:'#c47d5a',fontSize:18,fontWeight:700}}>{sel.glow_points||0}</div></div>
+            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.account_status||'active'}/></div></div>
           </div>}
 
           {/* BOOKING DETAIL */}
@@ -1546,104 +1319,6 @@ export default function AdminDashboard() {
             <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer',marginTop:12}}><input type="checkbox" checked={form.is_active!==false} onChange={e=>uf('is_active',e.target.checked)}/> Active</label>
           </div>}
 
-          {/* SUSPEND BRANCH */}
-          {modal==='suspend-branch'&&sel&&<div>
-            <div style={{padding:16,background:'#fce8e8',borderRadius:10,marginBottom:16}}>
-              <div style={{fontWeight:600,color:'#c94c4c',marginBottom:4}}>Suspend: {sel.name}</div>
-              <div style={{fontSize:13,color:'#8a7068'}}>This will deactivate the branch and hide it from clients. All pending bookings remain but no new bookings can be made.</div>
-            </div>
-            <div className="fg"><label className="fl">Reason for suspension *</label><textarea className="fta" value={form.suspension_reason||''} onChange={e=>uf('suspension_reason',e.target.value)} placeholder="Explain why this branch is being suspended..."/></div>
-          </div>}
-
-          {/* EDIT CLIENT */}
-          {modal==='edit-client'&&sel&&<div>
-            <div className="fr">
-              <div className="fg"><label className="fl">Name</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Email</label><input className="fi" type="email" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
-            </div>
-            <div className="fg"><label className="fl">Admin Notes</label><textarea className="fta" value={form.notes||''} onChange={e=>uf('notes',e.target.value)} placeholder="Internal notes about this client..."/></div>
-          </div>}
-
-          {/* SUSPEND CLIENT */}
-          {modal==='suspend-client'&&sel&&<div>
-            <div style={{padding:16,background:'#fdf6e3',borderRadius:10,marginBottom:16}}>
-              <div style={{fontWeight:600,color:'#b8860b',marginBottom:4}}>Suspend: {sel.name}</div>
-              <div style={{fontSize:13,color:'#8a7068'}}>Temporarily restricts client from making new bookings. They can still view their history.</div>
-            </div>
-            <div className="fg"><label className="fl">Reason *</label><textarea className="fta" value={form.suspension_reason||''} onChange={e=>uf('suspension_reason',e.target.value)} placeholder="Reason for suspension..."/></div>
-          </div>}
-
-          {/* BAN CLIENT */}
-          {modal==='ban-client'&&sel&&<div>
-            <div style={{padding:16,background:'#fce8e8',borderRadius:10,marginBottom:16}}>
-              <div style={{fontWeight:600,color:'#c94c4c',marginBottom:4}}>Ban: {sel.name}</div>
-              <div style={{fontSize:13,color:'#8a7068'}}>Permanently blocks this client from the platform. This is more severe than suspension.</div>
-            </div>
-            <div className="fg"><label className="fl">Reason *</label><textarea className="fta" value={form.suspension_reason||''} onChange={e=>uf('suspension_reason',e.target.value)} placeholder="Reason for banning..."/></div>
-          </div>}
-
-          {/* CREATE / EDIT STAFF */}
-          {(modal==='create-staff'||modal==='edit-staff')&&<div>
-            <div className="fr">
-              <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Role *</label><select className="fs" value={form.role||'stylist'} onChange={e=>uf('role',e.target.value)}><option value="stylist">Stylist</option><option value="barber">Barber</option><option value="nail_tech">Nail Tech</option><option value="braider">Braider</option><option value="therapist">Therapist</option><option value="makeup_artist">Makeup Artist</option><option value="manager">Manager</option><option value="receptionist">Receptionist</option></select></div>
-              <div className="fg"><label className="fl">Branch *</label><select className="fs" value={form.branch_id||''} onChange={e=>uf('branch_id',e.target.value)}><option value="">Select branch...</option>{D.branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
-              <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Email</label><input className="fi" type="email" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Years Experience</label><input className="fi" type="number" value={form.years_experience||0} onChange={e=>uf('years_experience',e.target.value)}/></div>
-            </div>
-            <div className="fg"><label className="fl">Specialties (comma-separated)</label><input className="fi" value={form.specialties||''} onChange={e=>uf('specialties',e.target.value)} placeholder="e.g. Braids, Locs, Twists"/></div>
-            <div style={{fontSize:13,fontWeight:600,color:'#c47d5a',marginBottom:8}}>Working Schedule</div>
-            <div className="fr">
-              <div className="fg"><label className="fl">Start Time</label><input className="fi" type="time" value={form.start_time||'09:00'} onChange={e=>uf('start_time',e.target.value)}/></div>
-              <div className="fg"><label className="fl">End Time</label><input className="fi" type="time" value={form.end_time||'17:00'} onChange={e=>uf('end_time',e.target.value)}/></div>
-            </div>
-            <div className="fg"><label className="fl">Working Days</label>
-              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{[{d:1,n:'Mon'},{d:2,n:'Tue'},{d:3,n:'Wed'},{d:4,n:'Thu'},{d:5,n:'Fri'},{d:6,n:'Sat'},{d:7,n:'Sun'}].map(({d,n})=>{
-                const active=(form.working_days||[]).includes(d);
-                return <div key={d} onClick={()=>{const wd=form.working_days||[];uf('working_days',active?wd.filter(x=>x!==d):[...wd,d].sort());}} style={{padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',background:active?'#c47d5a':'#f0ebe7',color:active?'#fff':'#8a7068'}}>{n}</div>;
-              })}</div>
-            </div>
-            <div className="fg"><label className="fl">Bio</label><textarea className="fta" value={form.bio||''} onChange={e=>uf('bio',e.target.value)} placeholder="Brief bio..."/></div>
-          </div>}
-
-          {/* CREATE BOOKING (admin on behalf) */}
-          {modal==='create-booking'&&<div>
-            <div className="fr">
-              <div className="fg"><label className="fl">Client *</label><select className="fs" value={form.client_id||''} onChange={e=>uf('client_id',e.target.value)}><option value="">Select client...</option>{D.clients.map(c=><option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}</select></div>
-              <div className="fg"><label className="fl">Branch *</label><select className="fs" value={form.branch_id||''} onChange={e=>uf('branch_id',e.target.value)}><option value="">Select branch...</option>{D.branches.filter(b=>b.is_active).map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
-              <div className="fg"><label className="fl">Service *</label><select className="fs" value={form.service_id||''} onChange={e=>{const sv=D.services.find(s=>s.id===e.target.value);uf('service_id',e.target.value);if(sv){uf('duration',sv.duration);uf('total_amount',sv.price);}}}><option value="">Select service...</option>{D.services.filter(s=>(!form.branch_id||s.branch_id===form.branch_id||!s.branch_id)&&s.is_active).map(s=><option key={s.id} value={s.id}>{s.name} ({FP(s.price)}, {s.duration}min)</option>)}</select></div>
-              <div className="fg"><label className="fl">Staff</label><select className="fs" value={form.staff_id||''} onChange={e=>uf('staff_id',e.target.value)}><option value="">Any Available</option>{D.staff.filter(s=>(!form.branch_id||s.branch_id===form.branch_id)&&s.is_active).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-              <div className="fg"><label className="fl">Date *</label><input className="fi" type="date" value={form.booking_date||''} onChange={e=>uf('booking_date',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Time *</label><input className="fi" type="time" value={form.booking_time||''} onChange={e=>uf('booking_time',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Duration (min)</label><input className="fi" type="number" value={form.duration||60} onChange={e=>uf('duration',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Amount (K)</label><input className="fi" type="number" value={form.total_amount||0} onChange={e=>uf('total_amount',e.target.value)}/></div>
-            </div>
-            <div className="fg"><label className="fl">Notes</label><textarea className="fta" value={form.client_notes||''} onChange={e=>uf('client_notes',e.target.value)} placeholder="Any special requests..."/></div>
-          </div>}
-
-          {/* RESCHEDULE BOOKING */}
-          {modal==='reschedule-booking'&&sel&&<div>
-            <div style={{padding:16,background:'#faf7f5',borderRadius:10,marginBottom:16}}>
-              <div style={{fontWeight:600,color:'#2c1810'}}>{clName(sel.client_id)} — {svName(sel.service_id)}</div>
-              <div style={{fontSize:13,color:'#8a7068'}}>Current: {sel.booking_date} at {sel.booking_time}</div>
-            </div>
-            <div className="fr">
-              <div className="fg"><label className="fl">New Date *</label><input className="fi" type="date" value={form.booking_date||''} onChange={e=>uf('booking_date',e.target.value)}/></div>
-              <div className="fg"><label className="fl">New Time *</label><input className="fi" type="time" value={form.booking_time||''} onChange={e=>uf('booking_time',e.target.value)}/></div>
-            </div>
-          </div>}
-
-          {/* REASSIGN STAFF */}
-          {modal==='reassign-staff'&&sel&&<div>
-            <div style={{padding:16,background:'#faf7f5',borderRadius:10,marginBottom:16}}>
-              <div style={{fontWeight:600,color:'#2c1810'}}>{clName(sel.client_id)} — {svName(sel.service_id)}</div>
-              <div style={{fontSize:13,color:'#8a7068'}}>Current staff: {stName(sel.staff_id)} · {sel.booking_date} {sel.booking_time}</div>
-            </div>
-            <div className="fg"><label className="fl">New Staff</label><select className="fs" value={form.staff_id||''} onChange={e=>uf('staff_id',e.target.value)}><option value="">Any Available</option>{D.staff.filter(s=>s.branch_id===sel.branch_id&&s.is_active).map(s=><option key={s.id} value={s.id}>{s.name} ({s.role})</option>)}</select></div>
-          </div>}
-
         </div>
 
         {/* MODAL FOOTER */}
@@ -1661,17 +1336,7 @@ export default function AdminDashboard() {
           {modal==='create-admin'&&<button className="btn btn-primary" onClick={createAdmin}>Add Admin</button>}
           {modal==='edit-page'&&<button className="btn btn-primary" onClick={savePage}><Icons.Save /> Save</button>}
           {modal==='edit-template'&&<button className="btn btn-primary" onClick={saveTemplate}><Icons.Save /> Save</button>}
-          {modal==='edit-branch'&&<button className="btn btn-primary" onClick={saveBranchFull}><Icons.Save /> Save Branch</button>}
-          {modal==='create-branch'&&<button className="btn btn-primary" onClick={createBranch}><Icons.Plus /> Create Branch</button>}
-          {modal==='suspend-branch'&&<button className="btn btn-danger" onClick={suspendBranch}>Suspend Branch</button>}
-          {modal==='edit-client'&&<button className="btn btn-primary" onClick={saveClient}><Icons.Save /> Save Client</button>}
-          {modal==='suspend-client'&&<button className="btn btn-danger" onClick={suspendClient}>Suspend Client</button>}
-          {modal==='ban-client'&&<button className="btn btn-danger" onClick={banClient}>Ban Client</button>}
-          {modal==='create-staff'&&<button className="btn btn-primary" onClick={createStaff}><Icons.Plus /> Create Staff</button>}
-          {modal==='edit-staff'&&<button className="btn btn-primary" onClick={saveStaff}><Icons.Save /> Save Staff</button>}
-          {modal==='create-booking'&&<button className="btn btn-primary" onClick={createBookingAdmin}><Icons.Plus /> Create Booking</button>}
-          {modal==='reschedule-booking'&&<button className="btn btn-primary" onClick={rescheduleBooking}><Icons.Calendar /> Reschedule</button>}
-          {modal==='reassign-staff'&&<button className="btn btn-primary" onClick={reassignBookingStaff}><Icons.Users /> Reassign</button>}
+          {modal==='edit-branch'&&<button className="btn btn-primary" onClick={saveBranchDetails}><Icons.Save /> Save Branch</button>}
           {modal==='create-service'&&<button className="btn btn-primary" onClick={async()=>{
             const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,price_max:form.price_max,duration:form.duration,duration_max:form.duration_max,deposit:form.deposit,image:form.image||null,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
             if(error){showToast(error.message,'error');return;} showToast('Service created');closeModal();fetchAll();
@@ -1787,6 +1452,7 @@ export default function AdminDashboard() {
             {page==='tickets'&&<Tickets />}
             {page==='reports'&&<Reports />}
             {page==='financials'&&<Financials />}
+            {page==='withdrawals'&&<Withdrawals />}
             {page==='invoices'&&<Invoices />}
             {page==='subscriptions'&&<Subscriptions />}
             {page==='points'&&<Points />}
@@ -1794,7 +1460,6 @@ export default function AdminDashboard() {
             {page==='announcements'&&<Announcements />}
             {page==='notifications'&&<Templates />}
             {page==='sms'&&<SmsLogs />}
-            {page==='recycleBin'&&<RecycleBin />}
             {page==='settings'&&<Settings />}
           </div>
         </div>
