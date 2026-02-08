@@ -263,7 +263,7 @@ export default function AdminDashboard() {
   const [editSettings, setEditSettings] = useState(null);
 
   // Data stores
-  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], wallets:[] });
+  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], salonWallets:[] });
   const [adminUser, setAdminUser] = useState(null);
 
   // ── AUTH CHECK ──
@@ -324,10 +324,10 @@ export default function AdminDashboard() {
       q('invoices').order('created_at',{ascending:false}),
       q('sms_logs').order('created_at',{ascending:false}).limit(100),
       q('salon_subscriptions').order('created_at',{ascending:false}),
-      q('withdrawals').order('created_at',{ascending:false}),
-      q('wallets'),
+      q('withdrawal_requests').order('created_at',{ascending:false}),
+      q('salon_wallets'),
     ]);
-    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], wallets:wa.data||[] };
+    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], salonWallets:wa.data||[] };
     setD(d);
     // Match admin user by auth email, or fall back to first admin
     if (authUser) {
@@ -758,20 +758,20 @@ export default function AdminDashboard() {
       setProcessing(id);
       try {
         if (action === 'mark_paid') {
-          await supabase.from('withdrawals').update({status:'completed', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
+          await supabase.from('withdrawal_requests').update({status:'completed', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
           const wd = D.withdrawals.find(w=>w.id===id);
           if (wd) {
-            await supabase.from('wallets').update({total_withdrawn: (D.wallets.find(w=>w.branch_id===wd.branch_id)?.total_withdrawn||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
+            await supabase.from('salon_wallets').update({total_withdrawn: (D.salonWallets.find(w=>w.branch_id===wd.branch_id)?.total_withdrawn||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
           }
           await log('Withdrawal marked as paid','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
           showToast('Withdrawal marked as paid ✓');
         } else {
           const wd = D.withdrawals.find(w=>w.id===id);
-          await supabase.from('withdrawals').update({status:'rejected', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
+          await supabase.from('withdrawal_requests').update({status:'rejected', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
           if (wd) {
-            const wallet = D.wallets.find(w=>w.branch_id===wd.branch_id);
+            const wallet = D.salonWallets.find(w=>w.branch_id===wd.branch_id);
             if (wallet) {
-              await supabase.from('wallets').update({balance: (parseFloat(wallet.balance)||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
+              await supabase.from('salon_wallets').update({balance: (parseFloat(wallet.balance)||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
             }
           }
           await log('Withdrawal rejected','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
