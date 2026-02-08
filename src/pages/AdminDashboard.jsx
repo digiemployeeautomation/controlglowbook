@@ -41,6 +41,8 @@ const Icons = {
   Clock: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
   Phone: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
   CreditCard: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  RecycleBin: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+  Restore: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>,
 };
 
 const FP = (a) => `K${(Number(a)||0).toLocaleString()}`;
@@ -263,7 +265,7 @@ export default function AdminDashboard() {
   const [editSettings, setEditSettings] = useState(null);
 
   // Data stores
-  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], blockedTimes:[], favorites:[] });
+  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], blockedTimes:[], favorites:[], recycleBin:[] });
   const [adminUser, setAdminUser] = useState(null);
 
   // ── AUTH CHECK ──
@@ -297,7 +299,7 @@ export default function AdminDashboard() {
   const fetchAll = async () => {
     setLoading(true);
     const q = (t) => supabase.from(t).select('*');
-    const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,bt,fav] = await Promise.all([
+    const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,bt,fav,rb] = await Promise.all([
       q('branches').order('created_at',{ascending:false}),
       q('clients').order('created_at',{ascending:false}),
       q('staff').order('created_at',{ascending:false}),
@@ -326,8 +328,9 @@ export default function AdminDashboard() {
       q('salon_subscriptions').order('created_at',{ascending:false}),
       q('staff_blocked_times').order('block_date',{ascending:false}),
       q('client_favorites'),
+      q('recycle_bin').order('deleted_at',{ascending:false}),
     ]);
-    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], blockedTimes:bt.data||[], favorites:fav.data||[] };
+    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], blockedTimes:bt.data||[], favorites:fav.data||[], recycleBin:rb.data||[] };
     setD(d);
     // Match admin user by auth email, or fall back to first admin
     if (authUser) {
@@ -365,7 +368,7 @@ export default function AdminDashboard() {
         prev=curr;
       }
       if(prev[tw.length]<=maxDist) return true;
-      if(qw.length>=2 && tw.startsWith(qw.slice(0,Math.min(2,qw.length)))) return true;
+      if(qw.length>=2 && qw.length<=4 && tw.startsWith(qw)) return true;
       return false;
     }));
   };
@@ -518,9 +521,45 @@ export default function AdminDashboard() {
     await supabase.from('notification_templates').update({body:form.body,subject:form.subject,is_active:form.is_active}).eq('id',form.id);
     await log('Template updated','template',form.id); showToast('Template saved'); closeModal(); fetchAll();
   };
-  const deleteItem = async (table,id,label) => {
-    await supabase.from(table).delete().eq('id',id);
-    await log(`${label} deleted`,label,id); showToast(`${label} deleted`); fetchAll();
+  const deleteItem = async (table, id, label) => {
+    // Soft delete: copy record to recycle_bin, then remove from original table
+    const { data: record } = await supabase.from(table).select('*').eq('id', id).single();
+    if (record) {
+      await supabase.from('recycle_bin').insert({
+        table_name: table,
+        record_id: id,
+        record_data: record,
+        display_name: record.name || record.title || record.ticket_number || label,
+        deleted_by: authUser?.id || null,
+      });
+    }
+    await supabase.from(table).delete().eq('id', id);
+    await log(`${label} moved to recycle bin`, label, id); showToast(`${label} moved to recycle bin 🗑️`); fetchAll();
+  };
+
+  const restoreItem = async (binEntry) => {
+    const { table_name, record_id, record_data } = binEntry;
+    // Remove internal fields that might conflict
+    const cleanData = { ...record_data };
+    // Re-insert into original table
+    const { error } = await supabase.from(table_name).insert(cleanData);
+    if (error) { showToast(`Restore failed: ${error.message}`, 'error'); return; }
+    // Remove from recycle bin
+    await supabase.from('recycle_bin').delete().eq('id', binEntry.id);
+    await log(`Restored ${binEntry.display_name} from recycle bin`, table_name, record_id);
+    showToast(`${binEntry.display_name} restored! ♻️`); fetchAll();
+  };
+
+  const permanentDelete = async (binEntry) => {
+    await supabase.from('recycle_bin').delete().eq('id', binEntry.id);
+    await log(`Permanently deleted ${binEntry.display_name}`, binEntry.table_name, binEntry.record_id);
+    showToast(`Permanently deleted`); fetchAll();
+  };
+
+  const emptyRecycleBin = async () => {
+    await supabase.from('recycle_bin').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await log('Emptied recycle bin', 'recycle_bin', null);
+    showToast('Recycle bin emptied'); fetchAll();
   };
 
   // ── BRANCH: Create new ──
@@ -682,9 +721,9 @@ export default function AdminDashboard() {
     {s:'Moderation',items:[{id:'reviews',l:'Reviews',i:Icons.Star},{id:'disputes',l:'Disputes',i:Icons.Alert,b:stats.openDisputes||null},{id:'tickets',l:'Support Tickets',i:Icons.Ticket,b:stats.openTickets||null},{id:'reports',l:'Reported Content',i:Icons.Flag,b:stats.pendingReports||null}]},
     {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'GlowPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
     {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone}]},
-    {s:'System',items:[{id:'settings',l:'Settings',i:Icons.Settings}]},
+    {s:'System',items:[{id:'recycleBin',l:'Recycle Bin',i:Icons.RecycleBin,b:D.recycleBin.length||null},{id:'settings',l:'Settings',i:Icons.Settings}]},
   ];
-  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Management',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program'};
+  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Management',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',recycleBin:'Recycle Bin'};
 
   // Shared components
   const TF = ({ph}) => <div className="tf"><Icons.Search /><input placeholder={ph||'Filter...'} value={tSearch} onChange={e=>setTSearch(e.target.value)} /></div>;
@@ -846,6 +885,7 @@ export default function AdminDashboard() {
         <td><ActionBtns>
           <button className="btn-icon" title="Edit" onClick={()=>openModal('edit-staff',s,{name:s.name,role:s.role,phone:s.phone||'',email:s.email||'',branch_id:s.branch_id,bio:s.bio||'',years_experience:s.years_experience||0,specialties:(s.specialties||[]).join(', '),working_days:s.working_days||[1,2,3,4,5],start_time:s.start_time||'09:00',end_time:s.end_time||'17:00',profile_photo:s.profile_photo||''})}><Icons.Edit /></button>
           {s.is_active?<button className="btn-icon" title="Deactivate" onClick={()=>toggleStaff(s.id,false)}><Icons.X /></button>:<button className="btn-icon" title="Activate" onClick={()=>toggleStaff(s.id,true)}><Icons.Check /></button>}
+          <button className="btn-icon" style={{color:'#c62828'}} title="Delete" onClick={()=>{if(confirm(`Move "${s.name}" to recycle bin?`))deleteItem('staff',s.id,'Staff')}}><Icons.Trash /></button>
         </ActionBtns></td></tr>;})}
         {!f.length && <tr><td colSpan="8" className="es">No staff found</td></tr>}
       </tbody></table>
@@ -952,7 +992,7 @@ export default function AdminDashboard() {
       <div className="tc"><div className="th"><span className="tt">Promotions ({D.promos.length})</span></div>
         <table><thead><tr><th>Name</th><th>Type</th><th>Code</th><th>Value</th><th>Uses</th><th>Active</th><th>Period</th><th>Actions</th></tr></thead><tbody>
           {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'∞'}</td><td>{p.is_active?'✅':'❌'}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
-            <td><button className="btn-icon" onClick={()=>deleteItem('promotions',p.id,'Promotion')}><Icons.Trash /></button></td></tr>)}
+            <td><button className="btn-icon" style={{color:'#c62828'}} onClick={()=>{if(confirm(`Move "${p.name}" to recycle bin?`))deleteItem('promotions',p.id,'Promotion')}}><Icons.Trash /></button></td></tr>)}
           {!D.promos.length && <tr><td colSpan="8" className="es">No promotions</td></tr>}
         </tbody></table>
       </div>
@@ -966,7 +1006,7 @@ export default function AdminDashboard() {
       <div className="tc"><div className="th"><span className="tt">Announcements ({D.announcements.length})</span></div>
         <table><thead><tr><th>Title</th><th>Message</th><th>Target</th><th>Priority</th><th>Active</th><th>Created</th><th>Actions</th></tr></thead><tbody>
           {D.announcements.map(a=><tr key={a.id}><td style={{fontWeight:600,color:'#2c1810'}}>{a.title}</td><td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.message}</td><td>{a.target}</td><td><Badge s={a.priority==='urgent'?'cancelled':a.priority==='high'?'pending':'active'}/></td><td>{a.is_active?'✅':'❌'}</td><td>{fmtD(a.created_at)}</td>
-            <td><button className="btn-icon" onClick={()=>deleteItem('platform_announcements',a.id,'Announcement')}><Icons.Trash /></button></td></tr>)}
+            <td><button className="btn-icon" style={{color:'#c62828'}} onClick={()=>{if(confirm(`Move "${a.title}" to recycle bin?`))deleteItem('platform_announcements',a.id,'Announcement')}}><Icons.Trash /></button></td></tr>)}
           {!D.announcements.length && <tr><td colSpan="7" className="es">No announcements</td></tr>}
         </tbody></table>
       </div>
@@ -1003,7 +1043,7 @@ export default function AdminDashboard() {
             <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
             <td>{s.branch_id ? brName(s.branch_id) : 'All'}</td>
             <td><Badge s={s.is_active?'active':'suspended'}/></td>
-            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,price_max:s.price_max||0,duration:s.duration||30,duration_max:s.duration_max||60,deposit:s.deposit||0,image:s.image||'',branch_id:s.branch_id||'',is_active:s.is_active})}><Icons.Edit /></button></ActionBtns></td>
+            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,price_max:s.price_max||0,duration:s.duration||30,duration_max:s.duration_max||60,deposit:s.deposit||0,image:s.image||'',branch_id:s.branch_id||'',is_active:s.is_active})}><Icons.Edit /></button><button className="btn-icon" style={{color:'#c62828'}} onClick={()=>{if(confirm(`Move "${s.name}" to recycle bin?`))deleteItem('services',s.id,'Service')}}><Icons.Trash /></button></ActionBtns></td>
           </tr>)}
         </tbody></table>
       </div>
@@ -1185,6 +1225,63 @@ export default function AdminDashboard() {
       </div>}
     </div>
   );
+
+  // ========== RECYCLE BIN ==========
+  const TABLE_LABELS = {services:'Service',branches:'Branch',staff:'Staff',clients:'Client',bookings:'Booking',reviews:'Review',promotions:'Promotion',platform_announcements:'Announcement',disputes:'Dispute',support_tickets:'Ticket',reported_content:'Report',waitlist:'Waitlist Entry',referrals:'Referral',invoices:'Invoice'};
+  const RecycleBin = () => {
+    const [binFilter, setBinFilter] = useState('all');
+    const [binSearch, setBinSearch] = useState('');
+    const items = D.recycleBin.filter(r => {
+      if (binFilter !== 'all' && r.table_name !== binFilter) return false;
+      if (binSearch) return fuzzyMatch(binSearch, r.display_name) || fuzzyMatch(binSearch, r.table_name);
+      return true;
+    });
+    const tables = [...new Set(D.recycleBin.map(r => r.table_name))].sort();
+    const daysLeft = (expires) => { const d = Math.ceil((new Date(expires) - new Date()) / 86400000); return d > 0 ? d : 0; };
+    const timeAgo = (dt) => { const mins = Math.floor((Date.now() - new Date(dt)) / 60000); if (mins < 60) return `${mins}m ago`; if (mins < 1440) return `${Math.floor(mins/60)}h ago`; return `${Math.floor(mins/1440)}d ago`; };
+
+    return (<div>
+      <div className="stats-grid">
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Items in Bin</span><div className="stat-icon gold"><Icons.RecycleBin /></div></div><div className="stat-value">{D.recycleBin.length}</div></div>
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Tables Affected</span><div className="stat-icon blue"><Icons.Activity /></div></div><div className="stat-value">{tables.length}</div></div>
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Auto-purge</span><div className="stat-icon green"><Icons.Clock /></div></div><div className="stat-value">30 days</div><div className="stat-change">Items expire automatically</div></div>
+      </div>
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Recycle Bin ({items.length})</span>
+          <div style={{display:'flex',gap:8}}>
+            {D.recycleBin.length > 0 && <button className="btn btn-sm" style={{background:'#c62828',color:'#fff',border:'none'}} onClick={() => { if(confirm('Permanently delete ALL items? This cannot be undone.')) emptyRecycleBin(); }}><Icons.Trash /> Empty Bin</button>}
+          </div>
+        </div>
+        <div style={{display:'flex',gap:10,padding:'0 0 16px',flexWrap:'wrap',alignItems:'center'}}>
+          <div style={{flex:1,maxWidth:300,display:'flex',alignItems:'center',gap:8,background:'#faf7f5',borderRadius:8,padding:'0 12px',border:'1px solid #ede5df'}}>
+            <Icons.Search /><input placeholder="Search deleted items..." value={binSearch} onChange={e=>setBinSearch(e.target.value)} style={{border:'none',background:'none',padding:'10px 0',fontSize:13,width:'100%',outline:'none',color:'#2c1810'}} />
+          </div>
+          <select value={binFilter} onChange={e=>setBinFilter(e.target.value)} style={{padding:'8px 12px',borderRadius:8,border:'1px solid #ede5df',fontSize:13,background:'#faf7f5',color:'#2c1810',cursor:'pointer'}}>
+            <option value="all">All types</option>
+            {tables.map(t => <option key={t} value={t}>{TABLE_LABELS[t] || t} ({D.recycleBin.filter(r=>r.table_name===t).length})</option>)}
+          </select>
+        </div>
+        {items.length === 0 ? <div style={{padding:48,textAlign:'center',color:'#8a7068'}}><div style={{fontSize:40,marginBottom:12}}>🗑️</div><div style={{fontSize:16,fontWeight:600,marginBottom:4}}>Recycle bin is empty</div><div style={{fontSize:13}}>Deleted items will appear here for 30 days</div></div> :
+        <table><thead><tr><th>Name</th><th>Type</th><th>Deleted</th><th>Expires In</th><th style={{textAlign:'center'}}>Preview</th><th>Actions</th></tr></thead><tbody>
+          {items.map(r => {
+            const dl = daysLeft(r.expires_at);
+            return (<tr key={r.id}>
+              <td style={{fontWeight:600,color:'#2c1810'}}>{r.display_name || '(unnamed)'}</td>
+              <td><Badge s={r.table_name==='services'?'confirmed':r.table_name==='staff'?'arrived':r.table_name==='branches'?'active':'pending'}/><span style={{marginLeft:6,fontSize:12}}>{TABLE_LABELS[r.table_name]||r.table_name}</span></td>
+              <td style={{fontSize:12,color:'#8a7068'}}>{timeAgo(r.deleted_at)}</td>
+              <td>{dl <= 3 ? <span style={{color:'#c62828',fontWeight:600,fontSize:13}}>{dl}d left</span> : <span style={{fontSize:13}}>{dl} days</span>}</td>
+              <td style={{textAlign:'center'}}><button className="btn-icon" title="Preview data" onClick={()=>{ alert(JSON.stringify(r.record_data, null, 2).slice(0,800)); }}><Icons.Eye /></button></td>
+              <td><ActionBtns>
+                <button className="btn btn-sm" style={{background:'#4a9d6e',color:'#fff',border:'none',display:'flex',alignItems:'center',gap:4}} onClick={()=>{ if(confirm(`Restore "${r.display_name}" to ${TABLE_LABELS[r.table_name]||r.table_name}s?`)) restoreItem(r); }}><Icons.Restore /> Restore</button>
+                <button className="btn-icon" style={{color:'#c62828'}} title="Delete permanently" onClick={()=>{ if(confirm(`Permanently delete "${r.display_name}"? This cannot be undone.`)) permanentDelete(r); }}><Icons.Trash /></button>
+              </ActionBtns></td>
+            </tr>);
+          })}
+        </tbody></table>}
+      </div>
+    </div>);
+  };
 
   // ========== MODALS ==========
   const Modal = () => {
@@ -1697,6 +1794,7 @@ export default function AdminDashboard() {
             {page==='announcements'&&<Announcements />}
             {page==='notifications'&&<Templates />}
             {page==='sms'&&<SmsLogs />}
+            {page==='recycleBin'&&<RecycleBin />}
             {page==='settings'&&<Settings />}
           </div>
         </div>
