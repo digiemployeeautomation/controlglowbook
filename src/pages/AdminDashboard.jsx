@@ -1,46 +1,48 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { LayoutDashboard, Home, Users, Calendar, Star, AlertCircle, Ticket, DollarSign, Gift, Bell, Flag, MessageSquare, Settings, Search, X, Check, Eye, Pencil, Trash2, Plus, Send, Save, Sparkles, TrendingUp, RefreshCw, Menu, Activity, UserPlus, XCircle, Key, FileText, Clock, Phone, CreditCard, Lightbulb, Scissors } from 'lucide-react';
 
 // ============================================
 // GLOWBOOK ADMIN - FULL PLATFORM CONTROL
 // ============================================
 
 const Icons = {
-  Dashboard: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  Branch: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Users: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  Calendar: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  Star: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-  Alert: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-  Ticket: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 0 0-2 2v3a2 2 0 1 1 0 4v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 1 1 0-4V7a2 2 0 0 0-2-2H5z"/></svg>,
-  Dollar: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
-  Gift: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
-  Bell: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
-  Flag: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
-  Megaphone: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-  Settings: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2m-4.22-5.78 1.42-1.42m-15.56 0 1.42 1.42m0 11.31-1.42 1.42m15.56 0-1.42-1.42"/></svg>,
-  Search: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-  X: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  Check: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-  Eye: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  Edit: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-  Trash: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-  Plus: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  Send: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-  Save: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-  Sparkles: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/></svg>,
-  TrendUp: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-  Refresh: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
-  Menu: () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
-  Activity: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-  WalkIn: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13 4a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM7 21l3-8 2.5 2v6M15.5 13L18 21M10 13L6 8l4-1 3 3"/></svg>,
-  NoShow: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>,
-  Key: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 0-7.778 7.778 5.5 5.5 0 0 0 7.777 0L15.5 15.5m0 0l2.5 2.5m-2.5-2.5L18 12.5m-2.5 2.5l-5-5"/></svg>,
-  FileText: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
-  MessageSquare: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-  Clock: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
-  Phone: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
-  CreditCard: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  Dashboard: (p) => <LayoutDashboard size={20} {...p}/>,
+  Branch: (p) => <Home size={20} {...p}/>,
+  Users: (p) => <Users size={20} {...p}/>,
+  Calendar: (p) => <Calendar size={20} {...p}/>,
+  Star: (p) => <Star size={20} {...p}/>,
+  Alert: (p) => <AlertCircle size={20} {...p}/>,
+  Ticket: (p) => <Ticket size={20} {...p}/>,
+  Dollar: (p) => <DollarSign size={20} {...p}/>,
+  Gift: (p) => <Gift size={20} {...p}/>,
+  Bell: (p) => <Bell size={20} {...p}/>,
+  Flag: (p) => <Flag size={20} {...p}/>,
+  Megaphone: (p) => <MessageSquare size={20} {...p}/>,
+  Settings: (p) => <Settings size={20} {...p}/>,
+  Search: (p) => <Search size={20} {...p}/>,
+  X: (p) => <X size={20} {...p}/>,
+  Check: (p) => <Check size={20} {...p}/>,
+  Eye: (p) => <Eye size={20} {...p}/>,
+  Edit: (p) => <Pencil size={16} {...p}/>,
+  Trash: (p) => <Trash2 size={16} {...p}/>,
+  Plus: (p) => <Plus size={16} {...p}/>,
+  Send: (p) => <Send size={16} {...p}/>,
+  Save: (p) => <Save size={16} {...p}/>,
+  Sparkles: (p) => <Sparkles size={20} {...p}/>,
+  TrendUp: (p) => <TrendingUp size={20} {...p}/>,
+  Refresh: (p) => <RefreshCw size={16} {...p}/>,
+  Menu: (p) => <Menu size={24} {...p}/>,
+  Activity: (p) => <Activity size={20} {...p}/>,
+  WalkIn: (p) => <UserPlus size={20} {...p}/>,
+  NoShow: (p) => <XCircle size={20} {...p}/>,
+  Key: (p) => <Key size={20} {...p}/>,
+  FileText: (p) => <FileText size={20} {...p}/>,
+  MessageSquare: (p) => <MessageSquare size={20} {...p}/>,
+  Clock: (p) => <Clock size={20} {...p}/>,
+  Phone: (p) => <Phone size={20} {...p}/>,
+  CreditCard: (p) => <CreditCard size={20} {...p}/>,
+  Lightbulb: (p) => <Lightbulb size={20} {...p}/>,
 };
 
 const FP = (a) => `K${(Number(a)||0).toLocaleString()}`;
@@ -50,6 +52,22 @@ const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',-apple-system,sans-serif;background:#faf7f5;color:#2c1810;line-height:1.5}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastIn{0%{opacity:0;transform:translateY(16px) scale(.95)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes tabSlide{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:translateX(0)}}
+.page-in{animation:pageIn .3s cubic-bezier(.16,1,.3,1) both}
+.page-content{animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both}
+.scale-in{animation:scaleIn .25s cubic-bezier(.16,1,.3,1) both}
+.fade-up{animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both}
+.tab-content{animation:tabSlide .25s cubic-bezier(.16,1,.3,1) both}
+.badge-pulse{animation:badgePulse 2s ease-in-out infinite}
+.skeleton{background:linear-gradient(90deg,#ede5df 25%,#f5f0ed 50%,#ede5df 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
+.stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
+.stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
 .admin{display:flex;min-height:100vh}
 .sidebar{width:260px;background:#1a1215;border-right:1px solid #2a1f23;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform 0.3s}
 .sidebar-header{padding:20px 24px;border-bottom:1px solid #2a1f23;display:flex;align-items:center;gap:12px}
@@ -75,7 +93,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#faf7f5;color:#2c
 .mobile-menu{display:none;cursor:pointer;color:#8a7068}
 .content{padding:24px 32px}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
-.stat-card{background:#ffffff;border:1px solid #ede5df;border-radius:14px;padding:20px}
+.stat-card{background:#ffffff;border:1px solid #ede5df;border-radius:14px;padding:20px;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,18,21,.06)}
 .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .stat-label{font-size:13px;color:#8a7068;font-weight:500}
 .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
@@ -104,26 +123,28 @@ tr:hover{background:rgba(196,125,90,0.04)}
 .bs.arrived{background:#e0f7fa;color:#00695c}
 .bs.no_show{background:#fce4ec;color:#880e4f}
 .bs.closed,.bs.waiting_on_user{background:#f0ebe7;color:#8a7068}
-.btn{padding:8px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s}
-.btn-primary{background:#c47d5a;color:#fff}.btn-primary:hover{background:#a35e3c}
-.btn-secondary{background:#fff;color:#2c1810;border:1px solid #ede5df}.btn-secondary:hover{background:#faf7f5}
-.btn-danger{background:#fce8e8;color:#c94c4c}.btn-danger:hover{background:#f5d0d0}
-.btn-success{background:#e8f5ec;color:#4a9d6e}.btn-success:hover{background:#d0eadb}
+.btn{padding:8px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s cubic-bezier(.16,1,.3,1)}
+.btn-primary{background:#c47d5a;color:#fff}.btn-primary:hover{background:#a35e3c;transform:translateY(-1px)}
+.btn-secondary{background:#fff;color:#2c1810;border:1px solid #ede5df}.btn-secondary:hover{background:#faf7f5;transform:translateY(-1px)}
+.btn-danger{background:#fce8e8;color:#c94c4c}.btn-danger:hover{background:#f5d0d0;transform:translateY(-1px)}
+.btn-success{background:#e8f5ec;color:#4a9d6e}.btn-success:hover{background:#d0eadb;transform:translateY(-1px)}
+.btn:active{transform:scale(.97) translateY(0)}
 .btn-sm{padding:6px 10px;font-size:12px}
-.btn-icon{width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;background:#f0ebe7;border-radius:8px;border:none;color:#8a7068;cursor:pointer}
-.btn-icon:hover{background:#e8e0db;color:#2c1810}
-.card{background:#ffffff;border:1px solid #ede5df;border-radius:14px;padding:20px;margin-bottom:16px}
+.btn-icon{width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;background:#f0ebe7;border-radius:8px;border:none;color:#8a7068;cursor:pointer;transition:all .15s ease}
+.btn-icon:hover{background:#e8e0db;color:#2c1810;transform:scale(1.05)}.btn-icon:active{transform:scale(.95)}
+.card{background:#ffffff;border:1px solid #ede5df;border-radius:14px;padding:20px;margin-bottom:16px;transition:box-shadow .2s ease}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .card-title{font-size:16px;font-weight:600;color:#2c1810;font-family:'Fraunces',serif}
 .fg{margin-bottom:16px}.fl{display:block;font-size:13px;font-weight:500;color:#8a7068;margin-bottom:6px}
 .fi,.fs,.fta{width:100%;padding:10px 14px;background:#faf7f5;border:1px solid #ede5df;border-radius:8px;color:#2c1810;font-size:14px;font-family:inherit}
-.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:#c47d5a}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:#c47d5a;box-shadow:0 0 0 3px rgba(196,125,90,0.15);transition:border-color .15s,box-shadow .15s}
 .fta{min-height:80px;resize:vertical}.fs{cursor:pointer}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .dg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .di{margin-bottom:12px}.dl{font-size:12px;color:#8a7068;margin-bottom:4px}.dv{font-size:14px;color:#2c1810;font-weight:500}
-.mo{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:#ffffff;border:1px solid #ede5df;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:#ffffff;border:1px solid #ede5df;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:scaleIn .25s cubic-bezier(.16,1,.3,1) both}
 .mh{display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid #ede5df}
 .mt{font-size:18px;font-weight:700;color:#2c1810;font-family:'Fraunces',serif}
 .mb{padding:20px;overflow-y:auto;flex:1}
@@ -136,7 +157,7 @@ tr:hover{background:rgba(196,125,90,0.04)}
 .tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:#8a7068}
 .tab:hover{color:#2c1810}.tab.active{background:#fff;color:#c47d5a;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .es{text-align:center;padding:40px;color:#8a7068}
-.toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;animation:si 0.3s}
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;animation:toastIn 0.3s cubic-bezier(.16,1,.3,1) both;display:flex;align-items:center;gap:8}
 .toast.success{background:#4a9d6e;color:#fff}.toast.error{background:#c94c4c;color:#fff}
 @keyframes si{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -511,7 +532,7 @@ export default function AdminDashboard() {
     {s:'Management',items:[{id:'branches',l:'Branches',i:Icons.Branch,b:stats.pendingApps||null},{id:'services',l:'Services',i:Icons.Star},{id:'clients',l:'Clients',i:Icons.Users},{id:'bookings',l:'Bookings',i:Icons.Calendar},{id:'staff',l:'Staff',i:Icons.Users},{id:'waitlist',l:'Waitlist',i:Icons.Calendar},{id:'referrals',l:'Referrals',i:Icons.Gift}]},
     {s:'Moderation',items:[{id:'reviews',l:'Reviews',i:Icons.Star},{id:'disputes',l:'Disputes',i:Icons.Alert,b:stats.openDisputes||null},{id:'tickets',l:'Support Tickets',i:Icons.Ticket,b:stats.openTickets||null},{id:'reports',l:'Reported Content',i:Icons.Flag,b:stats.pendingReports||null}]},
     {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'withdrawals',l:'Withdrawals',i:Icons.CreditCard,b:stats.pendingWithdrawals||null},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'GlowPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
-    {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone},{id:'suggestions',l:'Suggestions',i:Icons.Star,b:stats.newSuggestions||null}]},
+    {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone},{id:'suggestions',l:'Suggestions',i:Icons.Lightbulb,b:stats.newSuggestions||null}]},
     {s:'System',items:[{id:'settings',l:'Settings',i:Icons.Settings}]},
   ];
   const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',suggestions:'Suggestion Box'};
@@ -537,7 +558,7 @@ export default function AdminDashboard() {
         <div className="admin-profile"><div className="admin-avatar">{adminUser?.name?.[0]||'A'}</div><div><div className="admin-name">{adminUser?.name||'Admin'}</div><div className="admin-role">{adminUser?.role?.replace('_',' ')}</div></div></div>
         {authUser && <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',padding:'4px 8px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{authUser.email}</div>}
         <button onClick={handleLogout} style={{width:'100%',marginTop:8,padding:'8px 12px',borderRadius:8,border:'1px solid #2a1f23',background:'transparent',color:'rgba(255,255,255,0.55)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'DM Sans',textAlign:'left'}}>
-          ← Sign Out
+          Sign Out
         </button>
       </div>
     </div>
@@ -551,7 +572,7 @@ export default function AdminDashboard() {
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Total Clients</span><div className="stat-icon blue"><Icons.Users /></div></div><div className="stat-value">{stats.totalClients}</div></div>
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Total Bookings</span><div className="stat-icon green"><Icons.Calendar /></div></div><div className="stat-value">{stats.totalBookings}</div><div className="stat-change up">{stats.confirmed} upcoming</div></div>
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Revenue</span><div className="stat-icon gold"><Icons.Dollar /></div></div><div className="stat-value">{FP(stats.revenue)}</div></div>
-        <div className="stat-card"><div className="stat-header"><span className="stat-label">Reviews</span><div className="stat-icon purple"><Icons.Star /></div></div><div className="stat-value">{stats.totalReviews}</div><div className="stat-change up">Avg: {stats.avgRating} ★</div></div>
+        <div className="stat-card"><div className="stat-header"><span className="stat-label">Reviews</span><div className="stat-icon purple"><Icons.Star /></div></div><div className="stat-value">{stats.totalReviews}</div><div className="stat-change up">Avg: {stats.avgRating}</div></div>
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Open Issues</span><div className="stat-icon red"><Icons.Alert /></div></div><div className="stat-value">{stats.openDisputes+stats.openTickets}</div><div className="stat-change down">{stats.openDisputes} disputes, {stats.openTickets} tickets</div></div>
       </div>
       {stats.pendingWithdrawals > 0 && (
@@ -560,7 +581,7 @@ export default function AdminDashboard() {
             <span style={{fontSize:18}}>💸</span>
             <div><span style={{fontWeight:700,fontSize:14,color:'#6d5600'}}>{stats.pendingWithdrawals} pending payout{stats.pendingWithdrawals!==1?'s':''}</span><span style={{fontSize:13,color:'#8a6d00',marginLeft:8}}>require manual payment</span></div>
           </div>
-          <button className="btn btn-sm" style={{background:'#e65100',color:'#fff'}}>Review Now →</button>
+          <button className="btn btn-sm" style={{background:'#e65100',color:'#fff'}}>Review Now</button>
         </div>
       )}
       <div className="tc"><div className="th"><span className="tt">Recent Bookings</span><button className="btn btn-secondary btn-sm" onClick={()=>setPage('bookings')}>View All</button></div>
@@ -601,7 +622,7 @@ export default function AdminDashboard() {
               {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#8a7068'}}>⌂</div>}
             </div>
             <span style={{fontWeight:600,color:'#2c1810'}}>{b.name}</span>
-          </div></td><td>{b.location}</td><td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'} ★</td><td>{b.review_count||0}</td><td><Badge s={b.approval_status||'approved'}/></td>
+          </div></td><td>{b.location}</td><td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></td><td>{b.review_count||0}</td><td><Badge s={b.approval_status||'approved'}/></td>
             <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('branch-detail',b)}><Icons.Eye /></button>
               {b.approval_status!=='suspended'?<button className="btn-icon" onClick={()=>updateBranch(b.id,'suspended')}><Icons.X /></button>:<button className="btn-icon" onClick={()=>updateBranch(b.id,'approved')}><Icons.Check /></button>}
             </ActionBtns></td></tr>)}
@@ -662,7 +683,7 @@ export default function AdminDashboard() {
             {s.profile_photo ? <img src={s.profile_photo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <span style={{color:'#8a7068',fontSize:12,fontWeight:600}}>{s.name?.[0]}</span>}
           </div>
           <span style={{fontWeight:600,color:'#2c1810'}}>{s.name}</span>
-        </div></td><td>{s.role}</td><td>{brName(s.branch_id)}</td><td style={{color:'#c9a84c'}}>{s.rating?.toFixed(1)||'0.0'} ★</td><td>{s.bookings_completed||0}</td><td><Badge s={s.is_active?'active':'suspended'}/></td></tr>)}
+        </div></td><td>{s.role}</td><td>{brName(s.branch_id)}</td><td style={{color:'#c9a84c'}}>{s.rating?.toFixed(1)||'0.0'}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></td><td>{s.bookings_completed||0}</td><td><Badge s={s.is_active?'active':'suspended'}/></td></tr>)}
         {!f.length && <tr><td colSpan="6" className="es">No staff found</td></tr>}
       </tbody></table>
     </div>);
@@ -673,7 +694,7 @@ export default function AdminDashboard() {
     const f = filter(D.reviews,[r=>clName(r.client_id),r=>brName(r.branch_id),'review_text']);
     return (<div className="tc"><div className="th"><span className="tt">All Reviews ({f.length})</span><TF ph="Search reviews..."/></div>
       <table><thead><tr><th>Client</th><th>Branch</th><th>Rating</th><th>Review</th><th>Moderation</th><th>Date</th><th>Actions</th></tr></thead><tbody>
-        {f.map(r=><tr key={r.id}><td>{clName(r.client_id)}</td><td>{brName(r.branch_id)}</td><td style={{color:'#c9a84c',fontWeight:600}}>{(r.rating_average||r.rating_overall||0).toFixed(1)} ★</td><td style={{maxWidth:250,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.review_text||'-'}</td><td><Badge s={r.moderation_status||'approved'}/></td><td>{fmtD(r.created_at)}</td>
+        {f.map(r=><tr key={r.id}><td>{clName(r.client_id)}</td><td>{brName(r.branch_id)}</td><td style={{color:'#c9a84c',fontWeight:600}}>{(r.rating_average||r.rating_overall||0).toFixed(1)}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></td><td style={{maxWidth:250,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.review_text||'-'}</td><td><Badge s={r.moderation_status||'approved'}/></td><td>{fmtD(r.created_at)}</td>
           <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('review-detail',r)}><Icons.Eye /></button>
             {(r.moderation_status||'approved')==='approved'?<button className="btn-icon" onClick={()=>updateReview(r.id,'hidden')}><Icons.X /></button>:<button className="btn-icon" onClick={()=>updateReview(r.id,'approved')}><Icons.Check /></button>}
           </ActionBtns></td></tr>)}
@@ -766,7 +787,7 @@ export default function AdminDashboard() {
             await supabase.from('salon_wallets').update({total_withdrawn: (D.salonWallets.find(w=>w.branch_id===wd.branch_id)?.total_withdrawn||0) + parseFloat(wd.amount)}).eq('branch_id',wd.branch_id);
           }
           await log('Withdrawal marked as paid','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
-          showToast('Withdrawal marked as paid ✓');
+          showToast('Withdrawal marked as paid');
         } else {
           const wd = D.withdrawals.find(w=>w.id===id);
           await supabase.from('withdrawal_requests').update({status:'rejected', processed_at:new Date().toISOString(), processed_by:adminUser?.id}).eq('id',id);
@@ -796,7 +817,7 @@ export default function AdminDashboard() {
       {/* Pending payouts requiring action */}
       {pending.length > 0 && (
         <div style={{background:'#fff8e1',border:'1.5px solid #ffe082',borderRadius:12,padding:'16px 20px',marginBottom:20,display:'flex',alignItems:'flex-start',gap:10}}>
-          <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+          <span style={{flexShrink:0}}><AlertCircle size={18} color="#6d5600"/></span>
           <div>
             <div style={{fontWeight:700,fontSize:14,color:'#6d5600',marginBottom:2}}>Manual Payouts Required</div>
             <div style={{fontSize:13,color:'#8a6d00',lineHeight:1.5}}>There are <strong>{pending.length}</strong> pending withdrawal requests totalling <strong>{FP(totalPending)}</strong>. Send the funds via mobile money to each recipient, then click <strong>"Mark as Paid"</strong> to confirm. Click "Reject" to return funds to the salon's wallet.</div>
@@ -824,14 +845,14 @@ export default function AdminDashboard() {
                 <td style={{fontWeight:600,color:'#c47d5a'}}>{wd.withdraw_to_phone||'-'}</td>
                 <td>{wd.withdraw_to_name||'-'}</td>
                 <td style={{textTransform:'uppercase',fontSize:12,fontWeight:600}}>{wd.network||'-'}</td>
-                <td><span className={`bs ${wd.status==='completed'?'completed':wd.status==='rejected'||wd.status==='failed'?'rejected':'pending'}`}>{wd.status==='completed'?'Paid ✓':wd.status}</span></td>
+                <td><span className={`bs ${wd.status==='completed'?'completed':wd.status==='rejected'||wd.status==='failed'?'rejected':'pending'}`}>{wd.status==='completed'?'Paid':wd.status}</span></td>
                 <td style={{fontSize:12}}>{fmtDT(wd.created_at)}</td>
                 <td>
                   {(wd.status==='pending'||wd.status==='processing') ? (
                     confirmAction?.id===wd.id ? (
                       <div style={{background:'#fff',border:`1.5px solid ${confirmAction.type==='mark_paid'?'#4a9d6e':'#c94c4c'}`,borderRadius:10,padding:12,minWidth:220}}>
                         <div style={{fontSize:12,fontWeight:700,marginBottom:6,color:'#2c1810'}}>
-                          {confirmAction.type==='mark_paid'?'✅ Confirm Payment Sent':'❌ Confirm Rejection'}
+                          {confirmAction.type==='mark_paid'?'Confirm Payment Sent':'Confirm Rejection'}
                         </div>
                         <div style={{fontSize:11,color:'#8a7068',marginBottom:10,lineHeight:1.5}}>
                           {confirmAction.type==='mark_paid'
@@ -848,7 +869,7 @@ export default function AdminDashboard() {
                       </div>
                     ) : (
                       <ActionBtns>
-                        <button className="btn btn-success btn-sm" onClick={()=>setConfirmAction({id:wd.id,type:'mark_paid'})}>✓ Mark as Paid</button>
+                        <button className="btn btn-success btn-sm" onClick={()=>setConfirmAction({id:wd.id,type:'mark_paid'})}><Check size={14}/> Mark as Paid</button>
                         <button className="btn btn-danger btn-sm" onClick={()=>setConfirmAction({id:wd.id,type:'reject'})}>Reject</button>
                       </ActionBtns>
                     )
@@ -891,7 +912,7 @@ export default function AdminDashboard() {
       <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-promo')}><Icons.Plus /> Create Promotion</button></div>
       <div className="tc"><div className="th"><span className="tt">Promotions ({D.promos.length})</span></div>
         <table><thead><tr><th>Name</th><th>Type</th><th>Code</th><th>Value</th><th>Uses</th><th>Active</th><th>Period</th><th>Actions</th></tr></thead><tbody>
-          {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'∞'}</td><td>{p.is_active?'✅':'❌'}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
+          {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'∞'}</td><td>{p.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
             <td><button className="btn-icon" onClick={()=>deleteItem('promotions',p.id,'Promotion')}><Icons.Trash /></button></td></tr>)}
           {!D.promos.length && <tr><td colSpan="8" className="es">No promotions</td></tr>}
         </tbody></table>
@@ -905,7 +926,7 @@ export default function AdminDashboard() {
       <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-announcement')}><Icons.Plus /> Create Announcement</button></div>
       <div className="tc"><div className="th"><span className="tt">Announcements ({D.announcements.length})</span></div>
         <table><thead><tr><th>Title</th><th>Message</th><th>Target</th><th>Priority</th><th>Active</th><th>Created</th><th>Actions</th></tr></thead><tbody>
-          {D.announcements.map(a=><tr key={a.id}><td style={{fontWeight:600,color:'#2c1810'}}>{a.title}</td><td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.message}</td><td>{a.target}</td><td><Badge s={a.priority==='urgent'?'cancelled':a.priority==='high'?'pending':'active'}/></td><td>{a.is_active?'✅':'❌'}</td><td>{fmtD(a.created_at)}</td>
+          {D.announcements.map(a=><tr key={a.id}><td style={{fontWeight:600,color:'#2c1810'}}>{a.title}</td><td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.message}</td><td>{a.target}</td><td><Badge s={a.priority==='urgent'?'cancelled':a.priority==='high'?'pending':'active'}/></td><td>{a.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td><td>{fmtD(a.created_at)}</td>
             <td><button className="btn-icon" onClick={()=>deleteItem('platform_announcements',a.id,'Announcement')}><Icons.Trash /></button></td></tr>)}
           {!D.announcements.length && <tr><td colSpan="7" className="es">No announcements</td></tr>}
         </tbody></table>
@@ -917,7 +938,7 @@ export default function AdminDashboard() {
   const Templates = () => (
     <div className="tc"><div className="th"><span className="tt">Notification Templates ({D.templates.length})</span></div>
       <table><thead><tr><th>Name</th><th>Type</th><th>Event</th><th>Active</th><th>Actions</th></tr></thead><tbody>
-        {D.templates.map(n=><tr key={n.id}><td style={{fontWeight:600,color:'#2c1810'}}>{n.name.replace(/_/g,' ')}</td><td><Badge s={n.type==='sms'?'confirmed':'active'}/></td><td>{n.event?.replace(/_/g,' ')}</td><td>{n.is_active?'✅':'❌'}</td>
+        {D.templates.map(n=><tr key={n.id}><td style={{fontWeight:600,color:'#2c1810'}}>{n.name.replace(/_/g,' ')}</td><td><Badge s={n.type==='sms'?'confirmed':'active'}/></td><td>{n.event?.replace(/_/g,' ')}</td><td>{n.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td>
           <td><button className="btn-icon" onClick={()=>openModal('edit-template',n,{id:n.id,body:n.body,subject:n.subject||'',is_active:n.is_active})}><Icons.Edit /></button></td></tr>)}
       </tbody></table>
     </div>
@@ -937,7 +958,7 @@ export default function AdminDashboard() {
         <TF ph="Search services..." />
         <table><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Duration</th><th>Branch</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {f.map(s=><tr key={s.id}>
-            <td>{s.images?.[0] ? <img src={s.images[0]} alt="" style={{width:40,height:40,borderRadius:8,objectFit:'cover'}} /> : <div style={{width:40,height:40,borderRadius:8,background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>✨</div>}</td>
+            <td>{s.images?.[0] ? <img src={s.images[0]} alt="" style={{width:40,height:40,borderRadius:8,objectFit:'cover'}} /> : <div style={{width:40,height:40,borderRadius:8,background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center'}}><Sparkles size={16} color="#c47d5a"/></div>}</td>
             <td style={{fontWeight:600,color:'#2c1810'}}>{s.name}</td><td>{s.category||'-'}</td>
             <td>{FP(s.price)}</td>
             <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
@@ -1115,7 +1136,7 @@ export default function AdminDashboard() {
           )}
         </div>
         <div style={{display:'flex',gap:6}}>
-          {[{k:'all',l:'All Sources'},{k:'client',l:'👤 Clients'},{k:'salon',l:'✂ Salons'}].map(t=>
+          {[{k:'all',l:'All Sources'},{k:'client',l:'Clients'},{k:'salon',l:'Salons'}].map(t=>
             <button key={t.k} onClick={()=>setSCat(t.k)} style={{padding:'6px 14px',borderRadius:20,border:sCat===t.k?'2px solid #c47d5a':'1px solid #e0e0e0',background:sCat===t.k?'#fef6f0':'#fff',color:sCat===t.k?'#c47d5a':'#555',fontSize:12,fontWeight:600,cursor:'pointer'}}>{t.l}</button>
           )}
         </div>
@@ -1134,7 +1155,7 @@ export default function AdminDashboard() {
         {items.map(s=>{const isExpanded=expandedId===s.id;return(
           <div key={s.id} style={{background:'#fff',borderRadius:12,border:'1px solid #f0f0f0',overflow:'hidden'}}>
             <div style={{padding:'16px 20px',display:'flex',gap:14,alignItems:'flex-start',cursor:'pointer'}} onClick={()=>{setExpandedId(isExpanded?null:s.id);setNoteText(s.admin_notes||'')}}>
-              <div style={{width:40,height:40,borderRadius:10,background:s.source==='client'?'#e3f2fd':'#fff3e0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>{s.source==='client'?'👤':'✂'}</div>
+              <div style={{width:40,height:40,borderRadius:10,background:s.source==='client'?'#e3f2fd':'#fff3e0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>{s.source==='client'?<Icons.Users style={{width:18,height:18}}/>:<Scissors style={{width:18,height:18}}/>}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
                   <span style={{fontSize:14,fontWeight:700}}>{s.author_name||'Anonymous'}</span>
@@ -1224,7 +1245,7 @@ export default function AdminDashboard() {
               {sel.images.map((img,i) => <img key={i} src={img} alt="" style={{width:140,height:90,borderRadius:10,objectFit:'cover',flexShrink:0}} />)}
             </div>}
             <div className="dg">
-            {[['Name',sel.name],['Location',sel.location],['Phone',sel.phone],['Email',sel.email],['Rating',`${sel.rating} ★ (${sel.review_count} reviews)`],['Hours',`${sel.open_time} - ${sel.close_time}`],['Slot Interval',`${sel.slot_interval||30} min`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v||'-'}</div></div>)}
+            {[['Name',sel.name],['Location',sel.location],['Phone',sel.phone],['Email',sel.email],['Rating',`${sel.rating} (${sel.review_count} reviews)`],['Hours',`${sel.open_time} - ${sel.close_time}`],['Slot Interval',`${sel.slot_interval||30} min`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v||'-'}</div></div>)}
             <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.approval_status||'approved'}/></div></div>
             <div className="di"><div className="dl">Created</div><div className="dv">{fmtD(sel.created_at)}</div></div>
             <div className="di" style={{gridColumn:'span 2'}}><div className="dl">Description</div><div className="dv">{sel.description||'-'}</div></div>
@@ -1278,7 +1299,7 @@ export default function AdminDashboard() {
 
           {/* BOOKING DETAIL */}
           {modal==='booking-detail'&&sel&&<div className="dg">
-            {[['Client',clName(sel.client_id)+(sel.is_walk_in?' (Walk-in)':'')],['Branch',brName(sel.branch_id)],['Service',svName(sel.service_id)],['Staff',stName(sel.staff_id)],['Date & Time',`${sel.booking_date} at ${sel.booking_time}`],['Duration',`${sel.duration} mins`],['Total',FP(sel.total_amount)],['Discount',sel.discount_amount>0?`${FP(sel.discount_amount)} (${sel.points_used} pts)`:'-'],['Deposit',`${FP(sel.deposit_amount||0)} ${sel.deposit_paid?'✅':'❌'}`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
+            {[['Client',clName(sel.client_id)+(sel.is_walk_in?' (Walk-in)':'')],['Branch',brName(sel.branch_id)],['Service',svName(sel.service_id)],['Staff',stName(sel.staff_id)],['Date & Time',`${sel.booking_date} at ${sel.booking_time}`],['Duration',`${sel.duration} mins`],['Total',FP(sel.total_amount)],['Discount',sel.discount_amount>0?`${FP(sel.discount_amount)} (${sel.points_used} pts)`:'-'],['Deposit',`${FP(sel.deposit_amount||0)} ${sel.deposit_paid?'Paid':'Unpaid'}`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
             <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status}/></div></div>
             <div className="di"><div className="dl">Notes</div><div className="dv">{sel.client_notes||'-'}</div></div>
             {sel.cancellation_reason&&<div className="di"><div className="dl">Cancel Reason</div><div className="dv" style={{color:'#c94c4c'}}>{sel.cancellation_reason}</div></div>}
@@ -1288,8 +1309,8 @@ export default function AdminDashboard() {
           {modal==='review-detail'&&sel&&<div>
             <div className="dg">
               {[['Client',clName(sel.client_id)],['Branch',brName(sel.branch_id)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-              <div className="di"><div className="dl">Overall</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_overall} ★</div></div>
-              <div className="di"><div className="dl">Average</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_average?.toFixed(1)} ★</div></div>
+              <div className="di"><div className="dl">Overall</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_overall}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></div></div>
+              <div className="di"><div className="dl">Average</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_average?.toFixed(1)}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></div></div>
             </div>
             <div style={{marginTop:16,padding:16,background:'#faf7f5',borderRadius:10}}><div className="dl">Review</div><div style={{color:'#2c1810',lineHeight:1.7}}>{sel.review_text||'No text'}</div></div>
             {sel.response_text && <div style={{marginTop:12,padding:16,background:'#f0d9cc',borderRadius:10}}><div className="dl" style={{color:'#c47d5a'}}>Salon Response</div><div style={{color:'#2c1810'}}>{sel.response_text}</div></div>}
@@ -1501,7 +1522,15 @@ export default function AdminDashboard() {
     );
   }
 
-  if (loading) return <><style>{css}</style><div className="admin"><div style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100%',minHeight:'100vh',color:'#8a7068'}}>Loading GlowBook Admin...</div></div></>;
+  if (loading) return <><style>{css}</style><div className="admin"><div style={{flex:1,marginLeft:260,padding:32}}>
+    <div className="skeleton" style={{width:'35%',height:28,marginBottom:24}}/>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
+      {[0,1,2].map(i=><div key={i} className="stat-card" style={{padding:20}}><div className="skeleton" style={{width:'60%',height:14,marginBottom:12}}/><div className="skeleton" style={{width:'40%',height:28,marginBottom:8}}/><div className="skeleton" style={{width:'50%',height:12}}/></div>)}
+    </div>
+    <div className="tc" style={{padding:0}}><div style={{padding:'16px 20px',borderBottom:'1px solid #ede5df'}}><div className="skeleton" style={{width:'25%',height:18}}/></div>
+      {[0,1,2,3,4].map(i=><div key={i} style={{padding:'14px 20px',borderTop:i?'1px solid #ede5df':'none',display:'flex',gap:14,alignItems:'center'}}><div className="skeleton" style={{width:36,height:36,borderRadius:'50%'}}/><div style={{flex:1}}><div className="skeleton" style={{width:'50%',height:14,marginBottom:6}}/><div className="skeleton" style={{width:'30%',height:12}}/></div><div className="skeleton" style={{width:80,height:24,borderRadius:20}}/></div>)}
+    </div>
+  </div></div></>;
 
   return (
     <>
@@ -1519,7 +1548,7 @@ export default function AdminDashboard() {
               <button className="btn-icon" title="Refresh" onClick={fetchAll}><Icons.Refresh /></button>
             </div>
           </div>
-          <div className="content">
+          <div className="content" key={page} style={{animation:'pageIn .3s cubic-bezier(.16,1,.3,1) both'}}>
             {page==='dashboard'&&<Dashboard />}
             {page==='activity'&&<ActivityLog />}
             {page==='branches'&&<Branches />}
