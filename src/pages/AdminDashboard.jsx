@@ -930,18 +930,18 @@ export default function AdminDashboard() {
     return (<div>
       <div className="card">
         <div className="card-header"><span className="card-title">All Services ({f.length})</span>
-          <button className="btn btn-primary btn-sm" onClick={()=>openModal('create-service',null,{name:'',category:'',description:'',price:0,price_max:0,duration:30,duration_max:60,deposit:0,image:'',branch_id:''})}><Icons.Plus /> Add Service</button>
+          <button className="btn btn-primary btn-sm" onClick={()=>openModal('create-service',null,{name:'',category:'',description:'',price:0,duration:30,duration_max:60,branch_id:''})}><Icons.Plus /> Add Service</button>
         </div>
         <TF ph="Search services..." />
         <table><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Duration</th><th>Branch</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {f.map(s=><tr key={s.id}>
-            <td>{s.image ? <img src={s.image} alt="" style={{width:40,height:40,borderRadius:8,objectFit:'cover'}} /> : <div style={{width:40,height:40,borderRadius:8,background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>✨</div>}</td>
+            <td>{s.images?.[0] ? <img src={s.images[0]} alt="" style={{width:40,height:40,borderRadius:8,objectFit:'cover'}} /> : <div style={{width:40,height:40,borderRadius:8,background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>✨</div>}</td>
             <td style={{fontWeight:600,color:'#2c1810'}}>{s.name}</td><td>{s.category||'-'}</td>
-            <td>{FP(s.price)}{s.price_max>s.price?` – ${FP(s.price_max)}`:''}</td>
+            <td>{FP(s.price)}</td>
             <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
             <td>{s.branch_id ? brName(s.branch_id) : 'All'}</td>
             <td><Badge s={s.is_active?'active':'suspended'}/></td>
-            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,price_max:s.price_max||0,duration:s.duration||30,duration_max:s.duration_max||60,deposit:s.deposit||0,image:s.image||'',branch_id:s.branch_id||'',is_active:s.is_active})}><Icons.Edit /></button></ActionBtns></td>
+            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,duration:s.duration||30,duration_max:s.duration_max||60,branch_id:s.branch_id||'',is_active:s.is_active})}><Icons.Edit /></button></ActionBtns></td>
           </tr>)}
         </tbody></table>
       </div>
@@ -1177,11 +1177,10 @@ export default function AdminDashboard() {
             <div className="fr">
               <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
               <div className="fg"><label className="fl">Category</label><select className="fs" value={form.category||''} onChange={e=>uf('category',e.target.value)}><option value="">Select...</option>{['Hair','Braids','Nails','Skincare','Spa','Makeup','Lashes','Barber'].map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-              <div className="fg"><label className="fl">Min Price (K)</label><input className="fi" type="number" value={form.price||0} onChange={e=>uf('price',parseFloat(e.target.value)||0)}/></div>
-              <div className="fg"><label className="fl">Max Price (K)</label><input className="fi" type="number" value={form.price_max||0} onChange={e=>uf('price_max',parseFloat(e.target.value)||0)}/></div>
+              <div className="fg"><label className="fl">Price (K)</label><input className="fi" type="number" value={form.price||0} onChange={e=>uf('price',parseFloat(e.target.value)||0)}/></div>
+              <div className="fg"><label className="fl">Deposit (K)</label><div style={{padding:'8px 12px',borderRadius:8,background:'#f5f5f5',border:'1px solid #e0e0e0',fontSize:13,color:'#666'}}>K100 fixed for all services</div></div>
               <div className="fg"><label className="fl">Min Duration (min)</label><input className="fi" type="number" value={form.duration||30} onChange={e=>uf('duration',parseInt(e.target.value)||30)}/></div>
               <div className="fg"><label className="fl">Max Duration (min)</label><input className="fi" type="number" value={form.duration_max||60} onChange={e=>uf('duration_max',parseInt(e.target.value)||60)}/></div>
-              <div className="fg"><label className="fl">Deposit (K)</label><input className="fi" type="number" value={form.deposit||0} onChange={e=>uf('deposit',parseFloat(e.target.value)||0)}/></div>
               <div className="fg"><label className="fl">Branch</label><select className="fs" value={form.branch_id||''} onChange={e=>uf('branch_id',e.target.value)}><option value="">All Branches</option>{D.branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
             </div>
             <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
@@ -1338,11 +1337,11 @@ export default function AdminDashboard() {
           {modal==='edit-template'&&<button className="btn btn-primary" onClick={saveTemplate}><Icons.Save /> Save</button>}
           {modal==='edit-branch'&&<button className="btn btn-primary" onClick={saveBranchDetails}><Icons.Save /> Save Branch</button>}
           {modal==='create-service'&&<button className="btn btn-primary" onClick={async()=>{
-            const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,price_max:form.price_max,duration:form.duration,duration_max:form.duration_max,deposit:form.deposit,image:form.image||null,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
+            const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit:100,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
             if(error){showToast(error.message,'error');return;} showToast('Service created');closeModal();fetchAll();
           }}><Icons.Plus /> Create Service</button>}
           {modal==='edit-service'&&sel&&<><button className="btn btn-primary" onClick={async()=>{
-            const {error}=await supabase.from('services').update({name:form.name,category:form.category,description:form.description,price:form.price,price_max:form.price_max,duration:form.duration,duration_max:form.duration_max,deposit:form.deposit,image:form.image||null,branch_id:form.branch_id||null,is_active:form.is_active,updated_at:new Date().toISOString()}).eq('id',sel.id);
+            const {error}=await supabase.from('services').update({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit:100,branch_id:form.branch_id||null,is_active:form.is_active,updated_at:new Date().toISOString()}).eq('id',sel.id);
             if(error){showToast(error.message,'error');return;} showToast('Service updated');closeModal();fetchAll();
           }}><Icons.Save /> Save</button>
           <button className="btn btn-secondary" onClick={async()=>{await supabase.from('services').update({is_active:!sel.is_active}).eq('id',sel.id);showToast(sel.is_active?'Service deactivated':'Service activated');closeModal();fetchAll();}}>{sel.is_active?'Deactivate':'Activate'}</button></>}
