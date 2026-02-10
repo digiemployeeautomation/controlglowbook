@@ -263,7 +263,7 @@ export default function AdminDashboard() {
   const [editSettings, setEditSettings] = useState(null);
 
   // Data stores
-  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], salonWallets:[] });
+  const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], salonWallets:[], suggestions:[] });
   const [adminUser, setAdminUser] = useState(null);
 
   // ── AUTH CHECK ──
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
   const fetchAll = async () => {
     setLoading(true);
     const q = (t) => supabase.from(t).select('*');
-    const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,wd,wa] = await Promise.all([
+    const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,wd,wa,sg] = await Promise.all([
       q('branches').order('created_at',{ascending:false}),
       q('clients').order('created_at',{ascending:false}),
       q('staff').order('created_at',{ascending:false}),
@@ -326,8 +326,9 @@ export default function AdminDashboard() {
       q('salon_subscriptions').order('created_at',{ascending:false}),
       q('withdrawal_requests').order('created_at',{ascending:false}),
       q('salon_wallets'),
+      q('suggestions').order('created_at',{ascending:false}),
     ]);
-    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], salonWallets:wa.data||[] };
+    const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], salonWallets:wa.data||[], suggestions:sg.data||[] };
     setD(d);
     // Match admin user by auth email, or fall back to first admin
     if (authUser) {
@@ -383,6 +384,7 @@ export default function AdminDashboard() {
     pendingReports: D.reports.filter(r=>r.status==='pending').length,
     pendingApps: D.applications.filter(a=>a.status==='pending').length,
     pendingWithdrawals: D.withdrawals.filter(w=>w.status==='pending'||w.status==='processing').length,
+    newSuggestions: D.suggestions.filter(s=>s.status==='new').length,
   }), [D]);
 
   // ============ ALL ACTIONS ============
@@ -509,10 +511,10 @@ export default function AdminDashboard() {
     {s:'Management',items:[{id:'branches',l:'Branches',i:Icons.Branch,b:stats.pendingApps||null},{id:'services',l:'Services',i:Icons.Star},{id:'clients',l:'Clients',i:Icons.Users},{id:'bookings',l:'Bookings',i:Icons.Calendar},{id:'staff',l:'Staff',i:Icons.Users},{id:'waitlist',l:'Waitlist',i:Icons.Calendar},{id:'referrals',l:'Referrals',i:Icons.Gift}]},
     {s:'Moderation',items:[{id:'reviews',l:'Reviews',i:Icons.Star},{id:'disputes',l:'Disputes',i:Icons.Alert,b:stats.openDisputes||null},{id:'tickets',l:'Support Tickets',i:Icons.Ticket,b:stats.openTickets||null},{id:'reports',l:'Reported Content',i:Icons.Flag,b:stats.pendingReports||null}]},
     {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'withdrawals',l:'Withdrawals',i:Icons.CreditCard,b:stats.pendingWithdrawals||null},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'GlowPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
-    {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone}]},
+    {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone},{id:'suggestions',l:'Suggestions',i:Icons.Star,b:stats.newSuggestions||null}]},
     {s:'System',items:[{id:'settings',l:'Settings',i:Icons.Settings}]},
   ];
-  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program'};
+  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',suggestions:'Suggestion Box'};
 
   // Shared components
   const TF = ({ph}) => <div className="tf"><Icons.Search /><input placeholder={ph||'Filter...'} value={tSearch} onChange={e=>setTSearch(e.target.value)} /></div>;
@@ -1088,6 +1090,87 @@ export default function AdminDashboard() {
     </div>);
   };
 
+  const Suggestions = () => {
+    const [sTab,setSTab]=useState('all');
+    const [sCat,setSCat]=useState('all');
+    const [expandedId,setExpandedId]=useState(null);
+    const [noteText,setNoteText]=useState('');
+    const items=D.suggestions.filter(s=>{
+      if(sTab!=='all'&&s.status!==sTab)return false;
+      if(sCat!=='all'&&s.source!==sCat)return false;
+      if(tSearch){const q=tSearch.toLowerCase();if(!s.message?.toLowerCase().includes(q)&&!s.author_name?.toLowerCase().includes(q)&&!s.category?.toLowerCase().includes(q))return false}
+      return true;
+    });
+    const statusCounts={new:0,reviewed:0,planned:0,done:0,dismissed:0};
+    D.suggestions.forEach(s=>{if(statusCounts[s.status]!==undefined)statusCounts[s.status]++});
+    const updateStatus=async(id,status)=>{await supabase.from('suggestions').update({status,updated_at:new Date().toISOString()}).eq('id',id);showToast(`Marked as ${status}`);fetchAll()};
+    const saveNote=async(id)=>{if(!noteText.trim())return;await supabase.from('suggestions').update({admin_notes:noteText.trim(),status:'reviewed',updated_at:new Date().toISOString()}).eq('id',id);showToast('Note saved');setExpandedId(null);setNoteText('');fetchAll()};
+    const stColors={new:'#1976d2',reviewed:'#f57c00',planned:'#7b1fa2',done:'#388e3c',dismissed:'#9e9e9e'};
+
+    return(<div>
+      <div style={{display:'flex',gap:12,marginBottom:20,flexWrap:'wrap',alignItems:'center'}}>
+        <div style={{display:'flex',gap:6}}>
+          {[{k:'all',l:'All'},{k:'new',l:`New (${statusCounts.new})`},{k:'reviewed',l:'Reviewed'},{k:'planned',l:'Planned'},{k:'done',l:'Done'},{k:'dismissed',l:'Dismissed'}].map(t=>
+            <button key={t.k} onClick={()=>setSTab(t.k)} className={`tab ${sTab===t.k?'active':''}`} style={{padding:'6px 14px',borderRadius:20,border:sTab===t.k?'none':'1px solid #e0e0e0',background:sTab===t.k?'#1a1a2e':'#fff',color:sTab===t.k?'#fff':'#555',fontSize:12,fontWeight:600,cursor:'pointer'}}>{t.l}</button>
+          )}
+        </div>
+        <div style={{display:'flex',gap:6}}>
+          {[{k:'all',l:'All Sources'},{k:'client',l:'👤 Clients'},{k:'salon',l:'✂ Salons'}].map(t=>
+            <button key={t.k} onClick={()=>setSCat(t.k)} style={{padding:'6px 14px',borderRadius:20,border:sCat===t.k?'2px solid #c47d5a':'1px solid #e0e0e0',background:sCat===t.k?'#fef6f0':'#fff',color:sCat===t.k?'#c47d5a':'#555',fontSize:12,fontWeight:600,cursor:'pointer'}}>{t.l}</button>
+          )}
+        </div>
+        <TF ph="Search suggestions..." />
+      </div>
+      <div style={{display:'grid',gap:8,gridTemplateColumns:'repeat(5,1fr)',marginBottom:20}}>
+        {Object.entries(statusCounts).map(([k,v])=>
+          <div key={k} style={{background:'#fff',borderRadius:10,padding:'14px 16px',border:'1px solid #f0f0f0',textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:stColors[k]}}>{v}</div>
+            <div style={{fontSize:11,fontWeight:600,color:'#888',textTransform:'uppercase'}}>{k}</div>
+          </div>
+        )}
+      </div>
+      {items.length===0?<div style={{textAlign:'center',padding:40,color:'#aaa'}}>No suggestions found</div>:
+      <div style={{display:'grid',gap:12}}>
+        {items.map(s=>{const isExpanded=expandedId===s.id;return(
+          <div key={s.id} style={{background:'#fff',borderRadius:12,border:'1px solid #f0f0f0',overflow:'hidden'}}>
+            <div style={{padding:'16px 20px',display:'flex',gap:14,alignItems:'flex-start',cursor:'pointer'}} onClick={()=>{setExpandedId(isExpanded?null:s.id);setNoteText(s.admin_notes||'')}}>
+              <div style={{width:40,height:40,borderRadius:10,background:s.source==='client'?'#e3f2fd':'#fff3e0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>{s.source==='client'?'👤':'✂'}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
+                  <span style={{fontSize:14,fontWeight:700}}>{s.author_name||'Anonymous'}</span>
+                  <span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:s.source==='client'?'#e3f2fd':'#fff3e0',color:s.source==='client'?'#1565c0':'#e65100',fontWeight:600}}>{s.source}</span>
+                  <span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#f5f5f5',color:'#666',fontWeight:600}}>{s.category}</span>
+                  <span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:`${stColors[s.status]}18`,color:stColors[s.status],fontWeight:700}}>{s.status}</span>
+                </div>
+                <p style={{margin:0,fontSize:14,lineHeight:1.6,color:'#333'}}>{s.message}</p>
+                <div style={{display:'flex',gap:12,marginTop:6,fontSize:11,color:'#999'}}>
+                  <span>{s.created_at?.slice(0,10)}</span>
+                  {s.author_email&&<span>{s.author_email}</span>}
+                  {s.branch_id&&<span>Branch: {brName(s.branch_id)}</span>}
+                </div>
+                {s.admin_notes&&!isExpanded&&<div style={{marginTop:8,padding:'8px 12px',borderRadius:8,background:'#f8f5f0',fontSize:12,color:'#666',borderLeft:'3px solid #c47d5a'}}><strong>Admin note:</strong> {s.admin_notes}</div>}
+              </div>
+            </div>
+            {isExpanded&&(
+              <div style={{padding:'0 20px 16px',borderTop:'1px solid #f5f5f5',paddingTop:14}}>
+                <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
+                  {['new','reviewed','planned','done','dismissed'].map(st=>
+                    <button key={st} onClick={()=>updateStatus(s.id,st)} style={{padding:'6px 14px',borderRadius:8,border:s.status===st?`2px solid ${stColors[st]}`:'1px solid #e0e0e0',background:s.status===st?`${stColors[st]}12`:'#fff',color:s.status===st?stColors[st]:'#666',fontSize:12,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>{st}</button>
+                  )}
+                </div>
+                <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add admin notes..." rows={3} style={{width:'100%',padding:'10px 14px',borderRadius:8,border:'1px solid #e0e0e0',fontSize:13,marginBottom:10,resize:'vertical',fontFamily:'DM Sans'}} />
+                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                  <button onClick={()=>setExpandedId(null)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e0e0e0',background:'#fff',fontSize:12,fontWeight:600,cursor:'pointer'}}>Close</button>
+                  <button onClick={()=>saveNote(s.id)} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#c47d5a',color:'#fff',fontSize:12,fontWeight:600,cursor:'pointer'}}>Save Note</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )})}
+      </div>}
+    </div>);
+  };
+
   const Settings = () => (
     <div>
       <div className="tabs">{['general','features','pages','admins'].map(t=><div key={t} className={`tab ${settingsTab===t?'active':''}`} onClick={()=>setSettingsTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</div>)}</div>
@@ -1459,6 +1542,7 @@ export default function AdminDashboard() {
             {page==='announcements'&&<Announcements />}
             {page==='notifications'&&<Templates />}
             {page==='sms'&&<SmsLogs />}
+            {page==='suggestions'&&<Suggestions />}
             {page==='settings'&&<Settings />}
           </div>
         </div>
