@@ -278,6 +278,16 @@ export default function AdminDashboard() {
   const [tSearch, setTSearch] = useState('');
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState(null);
+
+  // Offline detection
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  useEffect(() => {
+    const goOff = () => setIsOffline(true);
+    const goOn = () => setIsOffline(false);
+    window.addEventListener('offline', goOff);
+    window.addEventListener('online', goOn);
+    return () => { window.removeEventListener('offline', goOff); window.removeEventListener('online', goOn); };
+  }, []);
   const [sel, setSel] = useState(null);
   const [form, setForm] = useState({});
   const [settingsTab, setSettingsTab] = useState('general');
@@ -320,43 +330,49 @@ export default function AdminDashboard() {
     const q = (t) => supabase.from(t).select('*');
     const [br,cl,st,sv,bk,rv,di,tk,tr,rc,rf,ff,pr,nt,an,pp,au,bs,pt,ap,al,wl,ref,inv,sms,sub,wd,wa,sg] = await Promise.all([
       q('branches').order('created_at',{ascending:false}),
-      q('clients').order('created_at',{ascending:false}),
+      q('clients').order('created_at',{ascending:false}).limit(1000),
       q('staff').order('created_at',{ascending:false}),
       q('services').order('name'),
-      q('bookings').order('created_at',{ascending:false}),
-      q('reviews').order('created_at',{ascending:false}),
-      q('disputes').order('created_at',{ascending:false}),
-      q('support_tickets').order('created_at',{ascending:false}),
-      q('support_responses').order('created_at'),
-      q('reported_content').order('created_at',{ascending:false}),
-      q('refunds').order('created_at',{ascending:false}),
+      q('bookings').order('created_at',{ascending:false}).limit(1000),
+      q('reviews').order('created_at',{ascending:false}).limit(500),
+      q('disputes').order('created_at',{ascending:false}).limit(200),
+      q('support_tickets').order('created_at',{ascending:false}).limit(200),
+      q('support_responses').order('created_at').limit(500),
+      q('reported_content').order('created_at',{ascending:false}).limit(200),
+      q('refunds').order('created_at',{ascending:false}).limit(200),
       q('feature_flags').order('name'),
-      q('promotions').order('created_at',{ascending:false}),
+      q('promotions').order('created_at',{ascending:false}).limit(100),
       q('notification_templates').order('name'),
-      q('platform_announcements').order('created_at',{ascending:false}),
+      q('platform_announcements').order('created_at',{ascending:false}).limit(50),
       q('platform_pages').order('slug'),
       q('admin_users').order('created_at'),
       supabase.from('business_settings').select('*').limit(1).single(),
-      q('glow_points_transactions').order('created_at',{ascending:false}).limit(100),
-      q('branch_applications').order('created_at',{ascending:false}),
+      q('lumin_points_transactions').order('created_at',{ascending:false}).limit(100),
+      q('branch_applications').order('created_at',{ascending:false}).limit(100),
       q('admin_activity_log').order('created_at',{ascending:false}).limit(50),
-      q('waitlist').order('created_at',{ascending:false}),
-      q('referrals').order('created_at',{ascending:false}),
-      q('invoices').order('created_at',{ascending:false}),
+      q('waitlist').order('created_at',{ascending:false}).limit(200),
+      q('referrals').order('created_at',{ascending:false}).limit(200),
+      q('invoices').order('created_at',{ascending:false}).limit(200),
       q('sms_logs').order('created_at',{ascending:false}).limit(100),
-      q('salon_subscriptions').order('created_at',{ascending:false}),
-      q('withdrawal_requests').order('created_at',{ascending:false}),
+      q('salon_subscriptions').order('created_at',{ascending:false}).limit(100),
+      q('withdrawal_requests').order('created_at',{ascending:false}).limit(200),
       q('salon_wallets'),
-      q('suggestions').order('created_at',{ascending:false}),
+      q('suggestions').order('created_at',{ascending:false}).limit(200),
     ]);
     const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], salonWallets:wa.data||[], suggestions:sg.data||[] };
     setD(d);
-    // Match admin user by auth email, or fall back to first admin
+    // Strict admin verification — must match an admin_users record
     if (authUser) {
       const matched = d.admins.find(a => a.email === authUser.email);
-      setAdminUser(matched || d.admins[0] || { name: authUser.email, role: 'admin' });
-    } else if (d.admins.length) {
-      setAdminUser(d.admins[0]);
+      if (!matched) {
+        // Not an admin — sign out and block access
+        await supabase.auth.signOut();
+        setAuthUser(null);
+        setAdminUser(null);
+        setLoading(false);
+        return;
+      }
+      setAdminUser(matched);
     }
     setLoading(false);
   };
@@ -476,9 +492,9 @@ export default function AdminDashboard() {
     const c = D.clients.find(x=>x.id===clientId);
     if (!c||!amount) return;
     const amt = parseInt(amount);
-    const np = Math.max(0,(c.glow_points||0)+amt);
-    await supabase.from('clients').update({glow_points:np,total_points_earned:amt>0?(c.total_points_earned||0)+amt:c.total_points_earned}).eq('id',clientId);
-    await supabase.from('glow_points_transactions').insert({client_id:clientId,type:amt>0?'admin_award':'admin_deduct',points:Math.abs(amt),description:reason||'Admin adjustment'});
+    const np = Math.max(0,(c.lumin_points||0)+amt);
+    await supabase.from('clients').update({lumin_points:np,total_points_earned:amt>0?(c.total_points_earned||0)+amt:c.total_points_earned}).eq('id',clientId);
+    await supabase.from('lumin_points_transactions').insert({client_id:clientId,type:amt>0?'admin_award':'admin_deduct',points:Math.abs(amt),description:reason||'Admin adjustment'});
     await log(`Points ${amt>0?'awarded':'deducted'}: ${Math.abs(amt)}`,'client',clientId); showToast(`${Math.abs(amt)} points ${amt>0?'awarded':'deducted'}`); fetchAll();
   };
   const createRefund = async () => {
@@ -531,11 +547,11 @@ export default function AdminDashboard() {
     {s:'Overview',items:[{id:'dashboard',l:'Dashboard',i:Icons.Dashboard},{id:'activity',l:'Activity Log',i:Icons.Activity}]},
     {s:'Management',items:[{id:'branches',l:'Branches',i:Icons.Branch,b:stats.pendingApps||null},{id:'services',l:'Services',i:Icons.Star},{id:'clients',l:'Clients',i:Icons.Users},{id:'bookings',l:'Bookings',i:Icons.Calendar},{id:'staff',l:'Staff',i:Icons.Users},{id:'waitlist',l:'Waitlist',i:Icons.Calendar},{id:'referrals',l:'Referrals',i:Icons.Gift}]},
     {s:'Moderation',items:[{id:'reviews',l:'Reviews',i:Icons.Star},{id:'disputes',l:'Disputes',i:Icons.Alert,b:stats.openDisputes||null},{id:'tickets',l:'Support Tickets',i:Icons.Ticket,b:stats.openTickets||null},{id:'reports',l:'Reported Content',i:Icons.Flag,b:stats.pendingReports||null}]},
-    {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'withdrawals',l:'Withdrawals',i:Icons.CreditCard,b:stats.pendingWithdrawals||null},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'GlowPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
+    {s:'Finance & Growth',items:[{id:'financials',l:'Financials',i:Icons.Dollar},{id:'withdrawals',l:'Withdrawals',i:Icons.CreditCard,b:stats.pendingWithdrawals||null},{id:'invoices',l:'Invoices',i:Icons.FileText},{id:'subscriptions',l:'Subscriptions',i:Icons.CreditCard},{id:'points',l:'LuminPoints',i:Icons.Sparkles},{id:'promotions',l:'Promotions',i:Icons.Gift}]},
     {s:'Communications',items:[{id:'announcements',l:'Announcements',i:Icons.Megaphone},{id:'notifications',l:'Templates',i:Icons.Bell},{id:'sms',l:'SMS Logs',i:Icons.Phone},{id:'suggestions',l:'Suggestions',i:Icons.Lightbulb,b:stats.newSuggestions||null}]},
     {s:'System',items:[{id:'settings',l:'Settings',i:Icons.Settings}]},
   ];
-  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'GlowPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',suggestions:'Suggestion Box'};
+  const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'LuminPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',suggestions:'Suggestion Box'};
 
   // Shared components
   const TF = ({ph}) => <div className="tf"><Icons.Search /><input placeholder={ph||'Filter...'} value={tSearch} onChange={e=>setTSearch(e.target.value)} /></div>;
@@ -635,8 +651,8 @@ export default function AdminDashboard() {
   const Clients = () => {
     const f = filter(D.clients,['name','phone','email']);
     return (<div className="tc"><div className="th"><span className="tt">All Clients ({f.length})</span><TF ph="Search clients..."/></div>
-      <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Bookings</th><th>GlowPoints</th><th>Spent</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {f.map(c=><tr key={c.id}><td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td><td>{c.phone}</td><td>{c.email||'-'}</td><td>{c.total_bookings||0}</td><td style={{color:'#c47d5a',fontWeight:600}}>{c.glow_points||0}</td><td>{FP(c.total_spent||0)}</td><td><Badge s={c.account_status||'active'}/></td>
+      <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Bookings</th><th>LuminPoints</th><th>Spent</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        {f.map(c=><tr key={c.id}><td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td><td>{c.phone}</td><td>{c.email||'-'}</td><td>{c.total_bookings||0}</td><td style={{color:'#c47d5a',fontWeight:600}}>{c.lumin_points||0}</td><td>{FP(c.total_spent||0)}</td><td><Badge s={c.account_status||'active'}/></td>
           <td><ActionBtns>
             <button className="btn-icon" onClick={()=>openModal('client-detail',c)}><Icons.Eye /></button>
             <button className="btn-icon" title="Adjust Points" onClick={()=>openModal('adjust-points',c,{points:'',reason:''})}><Icons.Sparkles /></button>
@@ -888,7 +904,7 @@ export default function AdminDashboard() {
 
   // ========== GLOWPOINTS ==========
   const Points = () => {
-    const circ = D.clients.reduce((s,c)=>s+(c.glow_points||0),0);
+    const circ = D.clients.reduce((s,c)=>s+(c.lumin_points||0),0);
     const earned = D.clients.reduce((s,c)=>s+(c.total_points_earned||0),0);
     return (<div>
       <div className="stats-grid">
@@ -899,7 +915,7 @@ export default function AdminDashboard() {
       </div>
       <div className="tc"><div className="th"><span className="tt">Client Points</span><TF ph="Search clients..."/></div>
         <table><thead><tr><th>Client</th><th>Current</th><th>Earned</th><th>Spent</th><th>Actions</th></tr></thead><tbody>
-          {filter(D.clients,['name']).sort((a,b)=>(b.glow_points||0)-(a.glow_points||0)).map(c=><tr key={c.id}><td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td><td style={{color:'#c47d5a',fontWeight:600}}>{c.glow_points||0}</td><td>{c.total_points_earned||0}</td><td>{(c.total_points_earned||0)-(c.glow_points||0)}</td>
+          {filter(D.clients,['name']).sort((a,b)=>(b.lumin_points||0)-(a.lumin_points||0)).map(c=><tr key={c.id}><td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td><td style={{color:'#c47d5a',fontWeight:600}}>{c.lumin_points||0}</td><td>{c.total_points_earned||0}</td><td>{(c.total_points_earned||0)-(c.lumin_points||0)}</td>
             <td><button className="btn btn-secondary btn-sm" onClick={()=>openModal('adjust-points',c,{points:'',reason:''})}><Icons.Sparkles /> Adjust</button></td></tr>)}
         </tbody></table>
       </div>
@@ -1295,7 +1311,7 @@ export default function AdminDashboard() {
           {/* CLIENT DETAIL */}
           {modal==='client-detail'&&sel&&<div className="dg">
             {[['Name',sel.name],['Phone',sel.phone],['Email',sel.email||'-'],['Bookings',sel.total_bookings||0],['Spent',FP(sel.total_spent||0)],['Joined',fmtD(sel.created_at)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-            <div className="di"><div className="dl">GlowPoints</div><div className="dv" style={{color:'#c47d5a',fontSize:18,fontWeight:700}}>{sel.glow_points||0}</div></div>
+            <div className="di"><div className="dl">LuminPoints</div><div className="dv" style={{color:'#c47d5a',fontSize:18,fontWeight:700}}>{sel.lumin_points||0}</div></div>
             <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.account_status||'active'}/></div></div>
           </div>}
 
@@ -1363,7 +1379,7 @@ export default function AdminDashboard() {
           {modal==='adjust-points'&&sel&&<div>
             <div style={{marginBottom:16,padding:16,background:'#faf7f5',borderRadius:10,textAlign:'center'}}>
               <div className="dl">Current Balance</div>
-              <div style={{fontSize:32,fontWeight:700,color:'#c47d5a'}}>{sel.glow_points||0} pts</div>
+              <div style={{fontSize:32,fontWeight:700,color:'#c47d5a'}}>{sel.lumin_points||0} pts</div>
             </div>
             <div className="fg"><label className="fl">Points (positive to add, negative to deduct)</label><input className="fi" type="number" value={form.points||''} onChange={e=>uf('points',e.target.value)} placeholder="e.g. 50 or -25"/></div>
             <div className="fg"><label className="fl">Reason</label><input className="fi" value={form.reason||''} onChange={e=>uf('reason',e.target.value)} placeholder="Reason for adjustment"/></div>
@@ -1471,7 +1487,7 @@ export default function AdminDashboard() {
           <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:isWide?'flex-start':'center',marginBottom:16}}>
             <div style={{width:44,height:44,background:'rgba(255,255,255,0.2)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:20}}>G</div>
           </div>
-          <h1 style={{fontFamily:'Fraunces, serif',fontSize:isWide?40:32,fontWeight:700,color:'#fff',marginBottom:8}}>GlowBook Admin</h1>
+          <h1 style={{fontFamily:'Fraunces, serif',fontSize:isWide?40:32,fontWeight:700,color:'#fff',marginBottom:8}}>LuminBook Admin</h1>
           <p style={{color:'rgba(255,255,255,.85)',fontSize:isWide?18:15,maxWidth:360,lineHeight:1.5}}>Platform control center for managing branches, clients & operations</p>
         </div>
         <div style={{padding:isWide?'48px 56px':'24px',flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:isWide?480:'100%'}}>
@@ -1537,6 +1553,7 @@ export default function AdminDashboard() {
   return (
     <>
       <style>{css}</style>
+      {isOffline&&<div role="alert" style={{position:'fixed',top:0,left:0,right:0,zIndex:2100,background:'#c62828',color:'#fff',textAlign:'center',padding:'8px 16px',fontSize:13,fontWeight:600}}>You're offline — check your connection</div>}
       <div className="admin">
         <Sidebar />
         <div className="main">
