@@ -67,7 +67,6 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#faf7f5;color:#2c
 .badge-pulse{animation:badgePulse 2s ease-in-out infinite}
 .skeleton{background:linear-gradient(90deg,#ede5df 25%,#f5f0ed 50%,#ede5df 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
 .stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
-.stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
 .admin{display:flex;min-height:100vh}
 .sidebar{width:260px;background:#1a1215;border-right:1px solid #2a1f23;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform 0.3s}
 .sidebar-header{padding:20px 24px;border-bottom:1px solid #2a1f23;display:flex;align-items:center;gap:12px}
@@ -166,7 +165,7 @@ tr:hover{background:rgba(196,125,90,0.04)}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.mobile-menu{display:block}.stats-grid{grid-template-columns:1fr 1fr}.dg,.fr{grid-template-columns:1fr}.topbar-search{display:none}}
 `;
 
-// ─── IMAGE UPLOAD UTILITY ─────────────────────────────────────────
+// â”€â”€â”€ IMAGE UPLOAD UTILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function uploadImageAdmin(bucket, folder, file) {
   const ext = file.name.split('.').pop();
   const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -250,7 +249,7 @@ function AdminGalleryUpload({ images = [], onUpdate, bucket, folder }) {
         {list.map((img,i) => (
           <div key={i} style={{width:90,height:64,borderRadius:8,overflow:'hidden',position:'relative',flexShrink:0}}>
             <img src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} />
-            <button onClick={() => remove(i)} style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(0,0,0,.7)',border:'none',color:'#2c1810',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+            <button onClick={() => remove(i)} style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(0,0,0,.7)',border:'none',color:'#2c1810',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>Ã—</button>
           </div>
         ))}
         <div onClick={() => document.getElementById(uid).click()}
@@ -265,7 +264,7 @@ function AdminGalleryUpload({ images = [], onUpdate, bucket, folder }) {
 }
 
 export default function AdminDashboard() {
-  // ── AUTH STATE ──
+  // â”€â”€ AUTH STATE â”€â”€
   const [authUser, setAuthUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -297,7 +296,7 @@ export default function AdminDashboard() {
   const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], salonWallets:[], suggestions:[] });
   const [adminUser, setAdminUser] = useState(null);
 
-  // ── AUTH CHECK ──
+  // â”€â”€ AUTH CHECK â”€â”€
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthUser(session?.user || null);
@@ -361,11 +360,11 @@ export default function AdminDashboard() {
     ]);
     const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], salonWallets:wa.data||[], suggestions:sg.data||[] };
     setD(d);
-    // Strict admin verification — must match an admin_users record
+    // Strict admin verification â€” must match an admin_users record
     if (authUser) {
       const matched = d.admins.find(a => a.email === authUser.email);
       if (!matched) {
-        // Not an admin — sign out and block access
+        // Not an admin â€” sign out and block access
         await supabase.auth.signOut();
         setAuthUser(null);
         setAdminUser(null);
@@ -594,7 +593,7 @@ export default function AdminDashboard() {
       {stats.pendingWithdrawals > 0 && (
         <div style={{background:'#fff8e1',border:'1.5px solid #ffe082',borderRadius:12,padding:'14px 20px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}} onClick={()=>setPage('withdrawals')}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>💸</span>
+            <span style={{fontSize:18}}>ðŸ’¸</span>
             <div><span style={{fontWeight:700,fontSize:14,color:'#6d5600'}}>{stats.pendingWithdrawals} pending payout{stats.pendingWithdrawals!==1?'s':''}</span><span style={{fontSize:13,color:'#8a6d00',marginLeft:8}}>require manual payment</span></div>
           </div>
           <button className="btn btn-sm" style={{background:'#e65100',color:'#fff'}}>Review Now</button>
@@ -627,7 +626,7 @@ export default function AdminDashboard() {
       {pending.length>0 && <div className="card" style={{borderColor:'#c9a84c'}}>
         <div className="card-header"><span className="card-title" style={{color:'#c9a84c'}}>Pending Applications ({pending.length})</span></div>
         {pending.map(a=><div key={a.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0',borderBottom:'1px solid #ede5df'}}>
-          <div><div style={{fontWeight:600,color:'#2c1810'}}>{a.business_name}</div><div style={{fontSize:13,color:'#8a7068'}}>{a.owner_name} · {a.location} · {fmtD(a.created_at)}</div></div>
+          <div><div style={{fontWeight:600,color:'#2c1810'}}>{a.business_name}</div><div style={{fontSize:13,color:'#8a7068'}}>{a.owner_name} Â· {a.location} Â· {fmtD(a.created_at)}</div></div>
           <ActionBtns><button className="btn btn-success btn-sm" onClick={()=>updateApp(a.id,'approved')}>Approve</button><button className="btn btn-danger btn-sm" onClick={()=>updateApp(a.id,'rejected')}>Reject</button></ActionBtns>
         </div>)}
       </div>}
@@ -635,7 +634,7 @@ export default function AdminDashboard() {
         <table><thead><tr><th>Name</th><th>Location</th><th>Rating</th><th>Reviews</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {f.map(b=><tr key={b.id}><td><div style={{display:'flex',alignItems:'center',gap:10}}>
             <div style={{width:40,height:28,borderRadius:6,overflow:'hidden',background:'#f0ebe7',flexShrink:0}}>
-              {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#8a7068'}}>⌂</div>}
+              {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#8a7068'}}>âŒ‚</div>}
             </div>
             <span style={{fontWeight:600,color:'#2c1810'}}>{b.name}</span>
           </div></td><td>{b.location}</td><td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></td><td>{b.review_count||0}</td><td><Badge s={b.approval_status||'approved'}/></td>
@@ -814,7 +813,7 @@ export default function AdminDashboard() {
             }
           }
           await log('Withdrawal rejected','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
-          showToast('Withdrawal rejected — funds returned to wallet');
+          showToast('Withdrawal rejected â€” funds returned to wallet');
         }
         fetchAll();
       } catch(e) { showToast('Error: '+e.message,'error'); }
@@ -890,7 +889,7 @@ export default function AdminDashboard() {
                       </ActionBtns>
                     )
                   ) : (
-                    <span style={{fontSize:11,color:'#8a7068'}}>{wd.processed_at ? `Processed ${fmtDT(wd.processed_at)}` : '—'}</span>
+                    <span style={{fontSize:11,color:'#8a7068'}}>{wd.processed_at ? `Processed ${fmtDT(wd.processed_at)}` : 'â€”'}</span>
                   )}
                 </td>
               </tr>
@@ -928,7 +927,7 @@ export default function AdminDashboard() {
       <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-promo')}><Icons.Plus /> Create Promotion</button></div>
       <div className="tc"><div className="th"><span className="tt">Promotions ({D.promos.length})</span></div>
         <table><thead><tr><th>Name</th><th>Type</th><th>Code</th><th>Value</th><th>Uses</th><th>Active</th><th>Period</th><th>Actions</th></tr></thead><tbody>
-          {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'∞'}</td><td>{p.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
+          {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'âˆž'}</td><td>{p.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
             <td><button className="btn-icon" onClick={()=>deleteItem('promotions',p.id,'Promotion')}><Icons.Trash /></button></td></tr>)}
           {!D.promos.length && <tr><td colSpan="8" className="es">No promotions</td></tr>}
         </tbody></table>
@@ -978,7 +977,7 @@ export default function AdminDashboard() {
             <td style={{fontWeight:600,color:'#2c1810'}}>{s.name}</td><td>{s.category||'-'}</td>
             <td>{FP(s.price)}</td>
             <td>{s.deposit_amount ? FP(s.deposit_amount) : <span style={{color:'#999',fontSize:11}}>branch default</span>}</td>
-            <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
+            <td>{s.duration}{s.duration_max>s.duration?`â€“${s.duration_max}`:''} min</td>
             <td>{s.branch_id ? brName(s.branch_id) : 'All'}</td>
             <td><Badge s={s.is_active?'active':'suspended'}/></td>
             <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,duration:s.duration||30,duration_max:s.duration_max||60,branch_id:s.branch_id||'',is_active:s.is_active,deposit_amount:s.deposit_amount??''})}><Icons.Edit /></button></ActionBtns></td>
@@ -1052,7 +1051,7 @@ export default function AdminDashboard() {
           {f.map(inv=><tr key={inv.id}>
             <td style={{fontWeight:600,color:'#c47d5a'}}>{inv.invoice_number||inv.id?.slice(0,8)}</td>
             <td>{brName(inv.branch_id)}</td>
-            <td>{inv.period_start ? `${fmtD(inv.period_start)} – ${fmtD(inv.period_end)}` : inv.period||'-'}</td>
+            <td>{inv.period_start ? `${fmtD(inv.period_start)} â€“ ${fmtD(inv.period_end)}` : inv.period||'-'}</td>
             <td>{FP(inv.subtotal||0)}</td>
             <td style={{color:inv.penalty>0?'#c94c4c':'inherit'}}>{inv.penalty>0?FP(inv.penalty):'-'}</td>
             <td style={{fontWeight:600,color:'#2c1810'}}>{FP(inv.total_amount||inv.subtotal||0)}</td>
@@ -1224,14 +1223,14 @@ export default function AdminDashboard() {
 
       {settingsTab==='features' && <div className="card"><div className="card-title" style={{marginBottom:20}}>Feature Flags</div>
         {D.flags.map(f=><div key={f.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 0',borderBottom:'1px solid #ede5df'}}>
-          <div><div style={{fontWeight:600,color:'#2c1810',fontSize:14}}>{f.name.replace(/_/g,' ')}</div><div style={{fontSize:12,color:'#8a7068'}}>{f.description} · {f.applies_to}</div></div>
+          <div><div style={{fontWeight:600,color:'#2c1810',fontSize:14}}>{f.name.replace(/_/g,' ')}</div><div style={{fontSize:12,color:'#8a7068'}}>{f.description} Â· {f.applies_to}</div></div>
           <div className={`toggle ${f.is_enabled?'on':''}`} onClick={()=>toggleFlag(f.id,!f.is_enabled)}/>
         </div>)}
       </div>}
 
       {settingsTab==='pages' && <div className="card"><div className="card-title" style={{marginBottom:20}}>Platform Pages</div>
         {D.pages.map(p=><div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 0',borderBottom:'1px solid #ede5df'}}>
-          <div><div style={{fontWeight:600,color:'#2c1810'}}>{p.title}</div><div style={{fontSize:12,color:'#8a7068'}}>/{p.slug} · {p.is_published?'Published':'Draft'}</div></div>
+          <div><div style={{fontWeight:600,color:'#2c1810'}}>{p.title}</div><div style={{fontSize:12,color:'#8a7068'}}>/{p.slug} Â· {p.is_published?'Published':'Draft'}</div></div>
           <button className="btn-icon" onClick={()=>openModal('edit-page',p,{id:p.id,title:p.title,content:p.content,slug:p.slug,is_published:p.is_published})}><Icons.Edit /></button>
         </div>)}
       </div>}
@@ -1249,7 +1248,7 @@ export default function AdminDashboard() {
   const Modal = () => {
     if (!modal) return null;
     const replies = sel ? D.ticketReplies.filter(r=>r.ticket_id===sel.id) : [];
-    const modalTitles = {'branch-detail':`Branch: ${sel?.name}`,'edit-branch':`Edit Branch: ${sel?.name}`,'create-service':'Create Service','edit-service':`Edit: ${sel?.name}`,'client-detail':`Client: ${sel?.name}`,'booking-detail':'Booking Details','review-detail':'Review Details','dispute-detail':'Dispute — Resolve','ticket-detail':`Ticket: ${sel?.ticket_number}`,'adjust-points':`Adjust Points: ${sel?.name}`,'create-refund':'Issue Refund','create-announcement':'Create Announcement','create-promo':'Create Promotion','create-admin':'Add Admin User','edit-page':`Edit Page: ${form.title||''}`,'edit-template':`Edit Template: ${sel?.name?.replace(/_/g,' ')||''}`};
+    const modalTitles = {'branch-detail':`Branch: ${sel?.name}`,'edit-branch':`Edit Branch: ${sel?.name}`,'create-service':'Create Service','edit-service':`Edit: ${sel?.name}`,'client-detail':`Client: ${sel?.name}`,'booking-detail':'Booking Details','review-detail':'Review Details','dispute-detail':'Dispute â€” Resolve','ticket-detail':`Ticket: ${sel?.ticket_number}`,'adjust-points':`Adjust Points: ${sel?.name}`,'create-refund':'Issue Refund','create-announcement':'Create Announcement','create-promo':'Create Promotion','create-admin':'Add Admin User','edit-page':`Edit Page: ${form.title||''}`,'edit-template':`Edit Template: ${sel?.name?.replace(/_/g,' ')||''}`};
 
     return (
       <div className="mo" onClick={closeModal}><div className="modal" onClick={e=>e.stopPropagation()}>
@@ -1362,7 +1361,7 @@ export default function AdminDashboard() {
             {replies.length>0 && <div style={{marginTop:16}}>
               <div className="dl" style={{marginBottom:8}}>Responses ({replies.length})</div>
               {replies.map(r=><div key={r.id} className={`ri ${r.is_internal_note?'internal':''}`}>
-                <div style={{fontSize:12,color:'#8a7068',marginBottom:4}}>{r.responder_type==='admin'?adName(r.responder_id):r.responder_type} · {fmtDT(r.created_at)} {r.is_internal_note&&<span style={{color:'#6b8ec4'}}>(Internal Note)</span>}</div>
+                <div style={{fontSize:12,color:'#8a7068',marginBottom:4}}>{r.responder_type==='admin'?adName(r.responder_id):r.responder_type} Â· {fmtDT(r.created_at)} {r.is_internal_note&&<span style={{color:'#6b8ec4'}}>(Internal Note)</span>}</div>
                 <div style={{fontSize:14,color:'#2c1810'}}>{r.message}</div>
               </div>)}
             </div>}
@@ -1480,6 +1479,33 @@ export default function AdminDashboard() {
     const bp = window.innerWidth >= 640 ? 'wide' : 'narrow';
     const isWide = bp === 'wide';
     const is = {width:'100%',padding:'13px 16px',borderRadius:10,border:'1px solid #ede5df',fontSize:14,background:'#faf7f5',color:'#2c1810',fontFamily:'DM Sans',marginBottom:12,outline:'none',boxSizing:'border-box'};
+
+    // Fix #5: controlled input state replaces DOM getElementById reads
+    // Fix #6: authLoading prevents duplicate submissions during async operations
+    const [authEmail, setAuthEmail] = React.useState('');
+    const [authPass, setAuthPass] = React.useState('');
+    const [authLoading, setAuthLoading] = React.useState(false);
+
+    const handleLogin = async () => {
+      if (!authEmail || !authPass) { setAuthError('Please fill in all fields'); return; }
+      setAuthError(''); setAuthLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPass });
+      if (error) { setAuthError(error.message === 'Email not confirmed' ? 'Please confirm your email first.' : error.message); setAuthLoading(false); return; }
+      const { data: admins } = await supabase.from('admin_users').select('email').eq('email', authEmail);
+      if (!admins?.length) { await supabase.auth.signOut(); setAuthError('Access denied. This account is not an admin.'); setAuthLoading(false); return; }
+      setAuthUser(data.user);
+      setAuthLoading(false);
+    };
+
+    const handleReset = async () => {
+      if (!authEmail) { setAuthError('Enter your email'); return; }
+      setAuthError(''); setAuthLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: window.location.origin });
+      setAuthLoading(false);
+      if (error) { setAuthError(error.message); return; }
+      setAuthMode('reset_sent');
+    };
+
     return (
       <><style>{css}</style>
       <div style={{minHeight:'100vh',background:'#faf7f5',display:'flex',flexDirection:isWide?'row':'column',fontFamily:"'DM Sans', sans-serif"}}>
@@ -1503,35 +1529,22 @@ export default function AdminDashboard() {
             <>
               <h2 style={{fontFamily:'Fraunces, serif',fontSize:22,fontWeight:700,marginBottom:8,color:'#2c1810'}}>Reset password</h2>
               <p style={{color:'#8a7068',fontSize:14,marginBottom:24}}>Enter your admin email to receive a reset link</p>
-              <input placeholder="Admin email" type="email" style={is} id="admin-email" onFocus={()=>setAuthError('')} />
-              <button onClick={async () => {
-                const email = document.getElementById('admin-email').value;
-                if (!email) { setAuthError('Enter your email'); return; }
-                setAuthError('');
-                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-                if (error) { setAuthError(error.message); return; }
-                setAuthMode('reset_sent');
-              }} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans',marginBottom:16}}>Send Reset Link</button>
+              {/* Fix #5: controlled input â€” value/onChange instead of getElementById */}
+              <input placeholder="Admin email" type="email" style={is} value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setAuthError('');}} />
+              {/* Fix #6: disabled while loading to prevent double submission */}
+              <button onClick={handleReset} disabled={authLoading} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background: authLoading ? '#d4a58a' :'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:authLoading?'not-allowed':'pointer',fontFamily:'DM Sans',marginBottom:16}}>{authLoading ? 'Sendingâ€¦' : 'Send Reset Link'}</button>
               <button onClick={()=>{setAuthMode('login');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#8a7068',fontSize:13,cursor:'pointer',fontFamily:'DM Sans'}}>Back to login</button>
             </>
           ) : (
             <>
               <h2 style={{fontFamily:'Fraunces, serif',fontSize:24,fontWeight:700,marginBottom:4,color:'#2c1810'}}>Welcome back</h2>
               <p style={{color:'#8a7068',fontSize:14,marginBottom:24}}>Sign in to the admin dashboard</p>
-              <input placeholder="Admin email" type="email" style={is} id="admin-email" onFocus={()=>setAuthError('')} />
-              <input placeholder="Password" type="password" style={is} id="admin-pass"
-                onKeyDown={e => { if (e.key === 'Enter') document.getElementById('admin-login-btn').click(); }} />
-              <button id="admin-login-btn" onClick={async () => {
-                const email = document.getElementById('admin-email').value;
-                const pass = document.getElementById('admin-pass').value;
-                if (!email||!pass) { setAuthError('Please fill in all fields'); return; }
-                setAuthError('');
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-                if (error) { setAuthError(error.message === 'Email not confirmed' ? 'Please confirm your email first.' : error.message); return; }
-                const { data: admins } = await supabase.from('admin_users').select('email').eq('email', email);
-                if (!admins?.length) { await supabase.auth.signOut(); setAuthError('Access denied. This account is not an admin.'); return; }
-                setAuthUser(data.user);
-              }} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans',marginBottom:12}}>Sign In</button>
+              {/* Fix #5: controlled inputs â€” value/onChange instead of getElementById */}
+              <input placeholder="Admin email" type="email" style={is} value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setAuthError('');}} />
+              <input placeholder="Password" type="password" style={is} value={authPass} onChange={e=>{setAuthPass(e.target.value);setAuthError('');}}
+                onKeyDown={e => { if (e.key === 'Enter' && !authLoading) handleLogin(); }} />
+              {/* Fix #6: disabled while loading to prevent double submission */}
+              <button onClick={handleLogin} disabled={authLoading} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:authLoading?'#d4a58a':'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:authLoading?'not-allowed':'pointer',fontFamily:'DM Sans',marginBottom:12}}>{authLoading ? 'Signing inâ€¦' : 'Sign In'}</button>
               <button onClick={()=>{setAuthMode('forgot');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#8a7068',fontSize:13,cursor:'pointer',fontFamily:'DM Sans'}}>Forgot password?</button>
             </>
           )}
@@ -1553,7 +1566,7 @@ export default function AdminDashboard() {
   return (
     <>
       <style>{css}</style>
-      {isOffline&&<div role="alert" style={{position:'fixed',top:0,left:0,right:0,zIndex:2100,background:'#c62828',color:'#fff',textAlign:'center',padding:'8px 16px',fontSize:13,fontWeight:600}}>You're offline — check your connection</div>}
+      {isOffline&&<div role="alert" style={{position:'fixed',top:0,left:0,right:0,zIndex:2100,background:'#c62828',color:'#fff',textAlign:'center',padding:'8px 16px',fontSize:13,fontWeight:600}}>You're offline â€” check your connection</div>}
       <div className="admin">
         <Sidebar />
         <div className="main">
