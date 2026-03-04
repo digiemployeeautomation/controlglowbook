@@ -67,6 +67,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#faf7f5;color:#2c
 .badge-pulse{animation:badgePulse 2s ease-in-out infinite}
 .skeleton{background:linear-gradient(90deg,#ede5df 25%,#f5f0ed 50%,#ede5df 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
 .stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
+.stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
 .admin{display:flex;min-height:100vh}
 .sidebar{width:260px;background:#1a1215;border-right:1px solid #2a1f23;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform 0.3s}
 .sidebar-header{padding:20px 24px;border-bottom:1px solid #2a1f23;display:flex;align-items:center;gap:12px}
@@ -178,7 +179,10 @@ async function uploadImageAdmin(bucket, folder, file) {
 function AdminImageUpload({ currentUrl, onUpload, bucket, folder, size = 64, round = false, label, onRemove }) {
   const [uploading, setUploading] = React.useState(false);
   const [preview, setPreview] = React.useState(currentUrl || null);
-  const uid = `aiu-${bucket}-${folder}-${Math.random().toString(36).slice(2)}`;
+  // Fix: was Math.random() which generated a new id on every render, breaking getElementById clicks.
+  // useRef keeps the same id for the lifetime of this component instance.
+  const uidRef = React.useRef(`aiu-${bucket}-${folder}-${Math.random().toString(36).slice(2)}`);
+  const uid = uidRef.current;
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -260,6 +264,264 @@ function AdminGalleryUpload({ images = [], onUpdate, bucket, folder }) {
       </div>
       <input id={uid} type="file" accept="image/*" multiple onChange={handleFiles} style={{display:'none'}} />
     </div>
+  );
+}
+
+// â”€â”€â”€ ADMIN MODAL (top-level component) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// IMPORTANT: This must be defined OUTSIDE AdminDashboard so React sees the same
+// stable component type on every render. Defining it inside (as a const arrow fn)
+// causes React to treat it as a new type on every keystroke â†’ unmount â†’ focus lost.
+function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtDT, showToast,
+  updateDispute, updateTicket, replyTicket, adjustPoints, createRefund,
+  createAnnouncement, createPromo, createAdmin, savePage, saveTemplate, saveBranchDetails, fetchAll }) {
+
+  if (!modal) return null;
+
+  const { branches, bookings, clients, services, staff, admins, ticketReplies } = D;
+  const clName = id => clients.find(x=>x.id===id)?.name||'Unknown';
+  const brName = id => branches.find(x=>x.id===id)?.name||'Unknown';
+  const svName = id => services.find(x=>x.id===id)?.name||'Unknown';
+  const stName = id => staff.find(x=>x.id===id)?.name||'Unknown';
+  const adName = id => admins.find(x=>x.id===id)?.name||'Unknown';
+
+  const replies = sel ? ticketReplies.filter(r=>r.ticket_id===sel.id) : [];
+  const modalTitles = {
+    'branch-detail':`Branch: ${sel?.name}`,
+    'edit-branch':`Edit Branch: ${sel?.name}`,
+    'create-service':'Create Service',
+    'edit-service':`Edit: ${sel?.name}`,
+    'client-detail':`Client: ${sel?.name}`,
+    'booking-detail':'Booking Details',
+    'review-detail':'Review Details',
+    'dispute-detail':'Dispute â€” Resolve',
+    'ticket-detail':`Ticket: ${sel?.ticket_number}`,
+    'adjust-points':`Adjust Points: ${sel?.name}`,
+    'create-refund':'Issue Refund',
+    'create-announcement':'Create Announcement',
+    'create-promo':'Create Promotion',
+    'create-admin':'Add Admin User',
+    'edit-page':`Edit Page: ${form.title||''}`,
+    'edit-template':`Edit Template: ${sel?.name?.replace(/_/g,' ')||''}`,
+  };
+
+  return (
+    <div className="mo" onClick={closeModal}><div className="modal" onClick={e=>e.stopPropagation()}>
+      <div className="mh"><span className="mt">{modalTitles[modal]||''}</span><div style={{cursor:'pointer',color:'#8a7068'}} onClick={closeModal}><Icons.X /></div></div>
+      <div className="mb">
+
+        {/* BRANCH DETAIL */}
+        {modal==='branch-detail'&&sel&&<div>
+          {sel.images?.length > 0 && <div style={{display:'flex',gap:8,marginBottom:16,overflowX:'auto'}}>
+            {sel.images.map((img,i) => <img key={i} src={img} alt="" style={{width:140,height:90,borderRadius:10,objectFit:'cover',flexShrink:0}} />)}
+          </div>}
+          <div className="dg">
+          {[['Name',sel.name],['Location',sel.location],['Phone',sel.phone],['Email',sel.email],['Rating',`${sel.rating} (${sel.review_count} reviews)`],['Hours',`${sel.open_time} - ${sel.close_time}`],['Slot Interval',`${sel.slot_interval||30} min`],['Default Deposit',`K${sel.default_deposit??100}`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v||'-'}</div></div>)}
+          <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.approval_status||'approved'}/></div></div>
+          <div className="di"><div className="dl">Created</div><div className="dv">{fmtD(sel.created_at)}</div></div>
+          <div className="di" style={{gridColumn:'span 2'}}><div className="dl">Description</div><div className="dv">{sel.description||'-'}</div></div>
+          </div>
+          <div style={{marginTop:12}}><button className="btn btn-primary btn-sm" onClick={()=>openModal('edit-branch',sel,{name:sel.name,location:sel.location,phone:sel.phone,email:sel.email,description:sel.description||'',open_time:sel.open_time,close_time:sel.close_time,slot_interval:sel.slot_interval||30,default_deposit:sel.default_deposit??100,images:sel.images||[]})}>Edit Branch</button></div>
+        </div>}
+
+        {/* EDIT BRANCH */}
+        {modal==='edit-branch'&&sel&&<div>
+          <AdminGalleryUpload images={form.images||[]} bucket="branches" folder={sel.id} onUpdate={urls=>uf('images',urls)} />
+          <div className="fr">
+            <div className="fg"><label className="fl">Name</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Location</label><input className="fi" value={form.location||''} onChange={e=>uf('location',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Email</label><input className="fi" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Opens At</label><input className="fi" type="time" value={form.open_time||''} onChange={e=>uf('open_time',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Closes At</label><input className="fi" type="time" value={form.close_time||''} onChange={e=>uf('close_time',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Slot Interval</label><select className="fs" value={form.slot_interval||30} onChange={e=>uf('slot_interval',parseInt(e.target.value))}><option value={15}>15 min</option><option value={20}>20 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
+            <div className="fg"><label className="fl">Default Deposit (K)</label><input className="fi" type="number" value={form.default_deposit??100} onChange={e=>uf('default_deposit',parseFloat(e.target.value)||0)}/></div>
+          </div>
+          <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
+        </div>}
+
+        {/* SERVICE CREATE/EDIT */}
+        {(modal==='create-service'||modal==='edit-service')&&<div>
+          {form.image && <div style={{marginBottom:12,textAlign:'center'}}><img src={form.image} alt="" style={{width:120,height:80,borderRadius:10,objectFit:'cover'}} /></div>}
+          <div className="fg" style={{marginBottom:12}}>
+            <label className="fl">Service Image</label>
+            <input type="file" accept="image/*" onChange={async(e)=>{
+              const file=e.target.files?.[0]; if(!file)return;
+              try{const url=await uploadImageAdmin('services',form.name?.replace(/\s/g,'-')||'misc',file); uf('image',url);}catch(err){showToast('Upload failed','error');}
+            }} style={{fontSize:12,color:'#8a7068'}} />
+          </div>
+          <div className="fr">
+            <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Category</label><select className="fs" value={form.category||''} onChange={e=>uf('category',e.target.value)}><option value="">Select...</option>{['Hair','Braids','Nails','Skincare','Spa','Makeup','Lashes','Barber'].map(c=><option key={c} value={c}>{c}</option>)}</select></div>
+            <div className="fg"><label className="fl">Price (K)</label><input className="fi" type="number" value={form.price||0} onChange={e=>uf('price',parseFloat(e.target.value)||0)}/></div>
+            <div className="fg"><label className="fl">Deposit (K)</label><input className="fi" type="number" value={form.deposit_amount||''} onChange={e=>uf('deposit_amount',e.target.value)} placeholder="Leave empty for branch default"/></div>
+            <div className="fg"><label className="fl">Min Duration (min)</label><input className="fi" type="number" value={form.duration||30} onChange={e=>uf('duration',parseInt(e.target.value)||30)}/></div>
+            <div className="fg"><label className="fl">Max Duration (min)</label><input className="fi" type="number" value={form.duration_max||60} onChange={e=>uf('duration_max',parseInt(e.target.value)||60)}/></div>
+            <div className="fg"><label className="fl">Branch</label><select className="fs" value={form.branch_id||''} onChange={e=>uf('branch_id',e.target.value)}><option value="">All Branches</option>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+          </div>
+          <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
+        </div>}
+
+        {/* CLIENT DETAIL */}
+        {modal==='client-detail'&&sel&&<div className="dg">
+          {[['Name',sel.name],['Phone',sel.phone],['Email',sel.email||'-'],['Bookings',sel.total_bookings||0],['Spent',FP(sel.total_spent||0)],['Joined',fmtD(sel.created_at)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
+          <div className="di"><div className="dl">LuminPoints</div><div className="dv" style={{color:'#c47d5a',fontSize:18,fontWeight:700}}>{sel.lumin_points||0}</div></div>
+          <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.account_status||'active'}/></div></div>
+        </div>}
+
+        {/* BOOKING DETAIL */}
+        {modal==='booking-detail'&&sel&&<div className="dg">
+          {[['Client',clName(sel.client_id)+(sel.is_walk_in?' (Walk-in)':'')],['Branch',brName(sel.branch_id)],['Service',svName(sel.service_id)],['Staff',stName(sel.staff_id)],['Date & Time',`${sel.booking_date} at ${sel.booking_time}`],['Duration',`${sel.duration} mins`],['Total',FP(sel.total_amount)],['Discount',sel.discount_amount>0?`${FP(sel.discount_amount)} (${sel.points_used} pts)`:'-'],['Deposit',`${FP(sel.deposit_amount||0)} ${sel.deposit_paid?'Paid':'Unpaid'}`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
+          <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status}/></div></div>
+          <div className="di"><div className="dl">Notes</div><div className="dv">{sel.client_notes||'-'}</div></div>
+          {sel.cancellation_reason&&<div className="di"><div className="dl">Cancel Reason</div><div className="dv" style={{color:'#c94c4c'}}>{sel.cancellation_reason}</div></div>}
+        </div>}
+
+        {/* REVIEW DETAIL */}
+        {modal==='review-detail'&&sel&&<div>
+          <div className="dg">
+            {[['Client',clName(sel.client_id)],['Branch',brName(sel.branch_id)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
+            <div className="di"><div className="dl">Overall</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_overall}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></div></div>
+            <div className="di"><div className="dl">Average</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_average?.toFixed(1)}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></div></div>
+          </div>
+          <div style={{marginTop:16,padding:16,background:'#faf7f5',borderRadius:10}}><div className="dl">Review</div><div style={{color:'#2c1810',lineHeight:1.7}}>{sel.review_text||'No text'}</div></div>
+          {sel.response_text && <div style={{marginTop:12,padding:16,background:'#f0d9cc',borderRadius:10}}><div className="dl" style={{color:'#c47d5a'}}>Salon Response</div><div style={{color:'#2c1810'}}>{sel.response_text}</div></div>}
+        </div>}
+
+        {/* DISPUTE DETAIL + RESOLVE */}
+        {modal==='dispute-detail'&&sel&&<div>
+          <div className="dg">
+            {[['Client',clName(sel.client_id)],['Branch',brName(sel.branch_id)],['Type',sel.dispute_type||sel.type||'-']].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
+            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status||'pending'}/></div></div>
+          </div>
+          <div style={{marginTop:16,padding:16,background:'#faf7f5',borderRadius:10}}><div className="dl">Description</div><div style={{color:'#2c1810',lineHeight:1.7}}>{sel.description||'-'}</div></div>
+          {sel.status!=='resolved'&&<div style={{marginTop:16}}>
+            <div className="fg"><label className="fl">Resolution Type</label><select className="fs" value={form.resolution||''} onChange={e=>uf('resolution',e.target.value)}>
+              <option value="">Select...</option><option value="refund">Refund</option><option value="points_compensation">Points Compensation</option><option value="apology">Apology</option><option value="warning_to_branch">Warning to Branch</option><option value="dismissed">Dismissed</option><option value="other">Other</option>
+            </select></div>
+            <div className="fg"><label className="fl">Admin Notes</label><textarea className="fta" value={form.notes||''} onChange={e=>uf('notes',e.target.value)} placeholder="Resolution notes..."/></div>
+          </div>}
+        </div>}
+
+        {/* TICKET DETAIL + REPLY */}
+        {modal==='ticket-detail'&&sel&&<div>
+          <div className="dg">
+            {[['Ticket #',sel.ticket_number],['Category',sel.category],['From',sel.submitted_by_type],['Priority',sel.priority]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{l==='Ticket #'?<span style={{color:'#c47d5a'}}>{v}</span>:v}</div></div>)}
+            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status}/></div></div>
+            <div className="di"><div className="dl">Created</div><div className="dv">{fmtDT(sel.created_at)}</div></div>
+          </div>
+          <div style={{marginTop:16}}><div className="dl">Subject</div><div style={{color:'#2c1810',fontWeight:600,marginBottom:8}}>{sel.subject}</div>
+            <div style={{padding:16,background:'#faf7f5',borderRadius:10,color:'#2c1810',lineHeight:1.7}}>{sel.description}</div>
+          </div>
+          {replies.length>0 && <div style={{marginTop:16}}>
+            <div className="dl" style={{marginBottom:8}}>Responses ({replies.length})</div>
+            {replies.map(r=><div key={r.id} className={`ri ${r.is_internal_note?'internal':''}`}>
+              <div style={{fontSize:12,color:'#8a7068',marginBottom:4}}>{r.responder_type==='admin'?adName(r.responder_id):r.responder_type} Â· {fmtDT(r.created_at)} {r.is_internal_note&&<span style={{color:'#6b8ec4'}}>(Internal Note)</span>}</div>
+              <div style={{fontSize:14,color:'#2c1810'}}>{r.message}</div>
+            </div>)}
+          </div>}
+          {sel.status!=='closed'&&<div style={{background:'#faf7f5',border:'1px solid #ede5df',borderRadius:10,padding:16,marginTop:16}}>
+            <div className="fg"><label className="fl">Reply</label><textarea className="fta" value={form.reply||''} onChange={e=>uf('reply',e.target.value)} placeholder="Type your reply..."/></div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer'}}><input type="checkbox" checked={form.isInternal||false} onChange={e=>uf('isInternal',e.target.checked)}/> Internal note</label>
+              <button className="btn btn-primary btn-sm" onClick={()=>{replyTicket(sel.id,form.reply,form.isInternal);uf('reply','');}}><Icons.Send /> Send</button>
+            </div>
+          </div>}
+        </div>}
+
+        {/* ADJUST POINTS */}
+        {modal==='adjust-points'&&sel&&<div>
+          <div style={{marginBottom:16,padding:16,background:'#faf7f5',borderRadius:10,textAlign:'center'}}>
+            <div className="dl">Current Balance</div>
+            <div style={{fontSize:32,fontWeight:700,color:'#c47d5a'}}>{sel.lumin_points||0} pts</div>
+          </div>
+          <div className="fg"><label className="fl">Points (positive to add, negative to deduct)</label><input className="fi" type="number" value={form.points||''} onChange={e=>uf('points',e.target.value)} placeholder="e.g. 50 or -25"/></div>
+          <div className="fg"><label className="fl">Reason</label><input className="fi" value={form.reason||''} onChange={e=>uf('reason',e.target.value)} placeholder="Reason for adjustment"/></div>
+        </div>}
+
+        {/* CREATE REFUND */}
+        {modal==='create-refund'&&<div>
+          <div className="fg"><label className="fl">Booking</label><select className="fs" value={form.booking_id||''} onChange={e=>uf('booking_id',e.target.value)}>
+            <option value="">Select booking...</option>
+            {bookings.filter(b=>b.status==='completed'||b.status==='cancelled').map(b=><option key={b.id} value={b.id}>{clName(b.client_id)} - {svName(b.service_id)} - {b.booking_date} ({FP(b.total_amount)})</option>)}
+          </select></div>
+          <div className="fr"><div className="fg"><label className="fl">Amount (K)</label><input className="fi" type="number" value={form.amount||''} onChange={e=>uf('amount',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Type</label><select className="fs" value={form.refund_type||'full'} onChange={e=>uf('refund_type',e.target.value)}><option value="full">Full</option><option value="partial">Partial</option><option value="deposit_only">Deposit Only</option><option value="points_compensation">Points</option></select></div></div>
+          <div className="fg"><label className="fl">Reason</label><textarea className="fta" value={form.reason||''} onChange={e=>uf('reason',e.target.value)} placeholder="Reason for refund..."/></div>
+        </div>}
+
+        {/* CREATE ANNOUNCEMENT */}
+        {modal==='create-announcement'&&<div>
+          <div className="fg"><label className="fl">Title</label><input className="fi" value={form.title||''} onChange={e=>uf('title',e.target.value)} placeholder="Announcement title"/></div>
+          <div className="fg"><label className="fl">Message</label><textarea className="fta" value={form.message||''} onChange={e=>uf('message',e.target.value)} placeholder="Announcement message..." style={{minHeight:120}}/></div>
+          <div className="fr"><div className="fg"><label className="fl">Target</label><select className="fs" value={form.target||'all'} onChange={e=>uf('target',e.target.value)}><option value="all">Everyone</option><option value="branches">Branches</option><option value="clients">Clients</option><option value="staff">Staff</option></select></div>
+            <div className="fg"><label className="fl">Priority</label><select className="fs" value={form.priority||'normal'} onChange={e=>uf('priority',e.target.value)}><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></div></div>
+        </div>}
+
+        {/* CREATE PROMOTION */}
+        {modal==='create-promo'&&<div>
+          <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)} placeholder="e.g. Holiday Special"/></div>
+          <div className="fg"><label className="fl">Description</label><input className="fi" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
+          <div className="fr"><div className="fg"><label className="fl">Type *</label><select className="fs" value={form.type||''} onChange={e=>uf('type',e.target.value)}><option value="">Select...</option><option value="double_points">Double Points</option><option value="bonus_points">Bonus Points</option><option value="discount_percentage">Discount %</option><option value="discount_fixed">Discount Fixed</option><option value="free_addon">Free Add-on</option><option value="referral_bonus">Referral Bonus</option></select></div>
+            <div className="fg"><label className="fl">Value *</label><input className="fi" type="number" value={form.value||''} onChange={e=>uf('value',e.target.value)}/></div></div>
+          <div className="fr"><div className="fg"><label className="fl">Promo Code</label><input className="fi" value={form.code||''} onChange={e=>uf('code',e.target.value.toUpperCase())} placeholder="e.g. GLOW20"/></div>
+            <div className="fg"><label className="fl">Max Uses</label><input className="fi" type="number" value={form.max_uses||''} onChange={e=>uf('max_uses',e.target.value)} placeholder="Unlimited"/></div></div>
+          <div className="fr"><div className="fg"><label className="fl">Starts *</label><input className="fi" type="date" value={form.starts_at||''} onChange={e=>uf('starts_at',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Ends *</label><input className="fi" type="date" value={form.ends_at||''} onChange={e=>uf('ends_at',e.target.value)}/></div></div>
+          <div className="fg"><label className="fl">Target</label><select className="fs" value={form.target||'all'} onChange={e=>uf('target',e.target.value)}><option value="all">All Clients</option><option value="new_clients">New Clients</option><option value="returning_clients">Returning</option></select></div>
+        </div>}
+
+        {/* CREATE ADMIN */}
+        {modal==='create-admin'&&<div>
+          <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
+          <div className="fg"><label className="fl">Email *</label><input className="fi" type="email" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
+          <div className="fr"><div className="fg"><label className="fl">Role</label><select className="fs" value={form.role||'admin'} onChange={e=>uf('role',e.target.value)}><option value="admin">Admin</option><option value="moderator">Moderator</option><option value="support">Support</option></select></div>
+            <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div></div>
+        </div>}
+
+        {/* EDIT PAGE */}
+        {modal==='edit-page'&&<div>
+          <div className="fg"><label className="fl">Title</label><input className="fi" value={form.title||''} onChange={e=>uf('title',e.target.value)}/></div>
+          <div className="fg"><label className="fl">Content</label><textarea className="fta" value={form.content||''} onChange={e=>uf('content',e.target.value)} style={{minHeight:200}}/></div>
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer'}}><input type="checkbox" checked={form.is_published!==false} onChange={e=>uf('is_published',e.target.checked)}/> Published</label>
+        </div>}
+
+        {/* EDIT TEMPLATE */}
+        {modal==='edit-template'&&<div>
+          {form.subject!==undefined && <div className="fg"><label className="fl">Subject</label><input className="fi" value={form.subject||''} onChange={e=>uf('subject',e.target.value)}/></div>}
+          <div className="fg"><label className="fl">Body</label><textarea className="fta" value={form.body||''} onChange={e=>uf('body',e.target.value)} style={{minHeight:160,fontFamily:'monospace',fontSize:13}}/></div>
+          {sel?.variables?.length>0 && <div><div className="dl" style={{marginBottom:4}}>Click to insert variable:</div><div style={{display:'flex',flexWrap:'wrap',gap:6}}>{sel.variables.map(v=><span key={v} style={{background:'#f0ebe7',padding:'4px 8px',borderRadius:6,fontSize:12,color:'#c47d5a',cursor:'pointer'}} onClick={()=>uf('body',(form.body||'')+`{{${v}}}`)}>{`{{${v}}}`}</span>)}</div></div>}
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer',marginTop:12}}><input type="checkbox" checked={form.is_active!==false} onChange={e=>uf('is_active',e.target.checked)}/> Active</label>
+        </div>}
+
+      </div>
+
+      {/* MODAL FOOTER */}
+      <div className="mf">
+        <button className="btn btn-secondary" onClick={closeModal}>Cancel</button>
+        {modal==='dispute-detail'&&sel?.status!=='resolved'&&<button className="btn btn-primary" onClick={()=>{updateDispute(sel.id,'resolved',form.notes,form.resolution);closeModal();}}>Resolve Dispute</button>}
+        {modal==='ticket-detail'&&sel?.status!=='closed'&&<>
+          {sel?.status!=='resolved'&&<button className="btn btn-success" onClick={()=>{updateTicket(sel.id,'resolved');closeModal();}}>Mark Resolved</button>}
+          <button className="btn btn-secondary" onClick={()=>{updateTicket(sel.id,'closed');closeModal();}}>Close Ticket</button>
+        </>}
+        {modal==='adjust-points'&&<button className="btn btn-primary" onClick={()=>{adjustPoints(sel.id,form.points,form.reason);closeModal();}}>Adjust Points</button>}
+        {modal==='create-refund'&&<button className="btn btn-primary" onClick={createRefund}>Issue Refund</button>}
+        {modal==='create-announcement'&&<button className="btn btn-primary" onClick={createAnnouncement}>Publish</button>}
+        {modal==='create-promo'&&<button className="btn btn-primary" onClick={createPromo}>Create</button>}
+        {modal==='create-admin'&&<button className="btn btn-primary" onClick={createAdmin}>Add Admin</button>}
+        {modal==='edit-page'&&<button className="btn btn-primary" onClick={savePage}><Icons.Save /> Save</button>}
+        {modal==='edit-template'&&<button className="btn btn-primary" onClick={saveTemplate}><Icons.Save /> Save</button>}
+        {modal==='edit-branch'&&<button className="btn btn-primary" onClick={saveBranchDetails}><Icons.Save /> Save Branch</button>}
+        {modal==='create-service'&&<button className="btn btn-primary" onClick={async()=>{
+          const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
+          if(error){showToast(error.message,'error');return;} showToast('Service created');closeModal();fetchAll();
+        }}><Icons.Plus /> Create Service</button>}
+        {modal==='edit-service'&&sel&&<><button className="btn btn-primary" onClick={async()=>{
+          const {error}=await supabase.from('services').update({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:form.is_active,updated_at:new Date().toISOString()}).eq('id',sel.id);
+          if(error){showToast(error.message,'error');return;} showToast('Service updated');closeModal();fetchAll();
+        }}><Icons.Save /> Save</button>
+        <button className="btn btn-secondary" onClick={async()=>{await supabase.from('services').update({is_active:!sel.is_active}).eq('id',sel.id);showToast(sel.is_active?'Service deactivated':'Service activated');closeModal();fetchAll();}}>{sel.is_active?'Deactivate':'Activate'}</button></>}
+      </div>
+    </div></div>
   );
 }
 
@@ -1245,231 +1507,11 @@ export default function AdminDashboard() {
   );
 
   // ========== MODALS ==========
-  const Modal = () => {
-    if (!modal) return null;
-    const replies = sel ? D.ticketReplies.filter(r=>r.ticket_id===sel.id) : [];
-    const modalTitles = {'branch-detail':`Branch: ${sel?.name}`,'edit-branch':`Edit Branch: ${sel?.name}`,'create-service':'Create Service','edit-service':`Edit: ${sel?.name}`,'client-detail':`Client: ${sel?.name}`,'booking-detail':'Booking Details','review-detail':'Review Details','dispute-detail':'Dispute â€” Resolve','ticket-detail':`Ticket: ${sel?.ticket_number}`,'adjust-points':`Adjust Points: ${sel?.name}`,'create-refund':'Issue Refund','create-announcement':'Create Announcement','create-promo':'Create Promotion','create-admin':'Add Admin User','edit-page':`Edit Page: ${form.title||''}`,'edit-template':`Edit Template: ${sel?.name?.replace(/_/g,' ')||''}`};
-
-    return (
-      <div className="mo" onClick={closeModal}><div className="modal" onClick={e=>e.stopPropagation()}>
-        <div className="mh"><span className="mt">{modalTitles[modal]||''}</span><div style={{cursor:'pointer',color:'#8a7068'}} onClick={closeModal}><Icons.X /></div></div>
-        <div className="mb">
-
-          {/* BRANCH DETAIL */}
-          {modal==='branch-detail'&&sel&&<div>
-            {sel.images?.length > 0 && <div style={{display:'flex',gap:8,marginBottom:16,overflowX:'auto'}}>
-              {sel.images.map((img,i) => <img key={i} src={img} alt="" style={{width:140,height:90,borderRadius:10,objectFit:'cover',flexShrink:0}} />)}
-            </div>}
-            <div className="dg">
-            {[['Name',sel.name],['Location',sel.location],['Phone',sel.phone],['Email',sel.email],['Rating',`${sel.rating} (${sel.review_count} reviews)`],['Hours',`${sel.open_time} - ${sel.close_time}`],['Slot Interval',`${sel.slot_interval||30} min`],['Default Deposit',`K${sel.default_deposit??100}`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v||'-'}</div></div>)}
-            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.approval_status||'approved'}/></div></div>
-            <div className="di"><div className="dl">Created</div><div className="dv">{fmtD(sel.created_at)}</div></div>
-            <div className="di" style={{gridColumn:'span 2'}}><div className="dl">Description</div><div className="dv">{sel.description||'-'}</div></div>
-            </div>
-            <div style={{marginTop:12}}><button className="btn btn-primary btn-sm" onClick={()=>openModal('edit-branch',sel,{name:sel.name,location:sel.location,phone:sel.phone,email:sel.email,description:sel.description||'',open_time:sel.open_time,close_time:sel.close_time,slot_interval:sel.slot_interval||30,default_deposit:sel.default_deposit??100,images:sel.images||[]})}>Edit Branch</button></div>
-          </div>}
-
-          {/* EDIT BRANCH */}
-          {modal==='edit-branch'&&sel&&<div>
-            <AdminGalleryUpload images={form.images||[]} bucket="branches" folder={sel.id} onUpdate={urls=>uf('images',urls)} />
-            <div className="fr">
-              <div className="fg"><label className="fl">Name</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Location</label><input className="fi" value={form.location||''} onChange={e=>uf('location',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Email</label><input className="fi" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Opens At</label><input className="fi" type="time" value={form.open_time||''} onChange={e=>uf('open_time',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Closes At</label><input className="fi" type="time" value={form.close_time||''} onChange={e=>uf('close_time',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Slot Interval</label><select className="fs" value={form.slot_interval||30} onChange={e=>uf('slot_interval',parseInt(e.target.value))}><option value={15}>15 min</option><option value={20}>20 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
-              <div className="fg"><label className="fl">Default Deposit (K)</label><input className="fi" type="number" value={form.default_deposit??100} onChange={e=>uf('default_deposit',parseFloat(e.target.value)||0)}/></div>
-            </div>
-            <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
-          </div>}
-
-          {/* SERVICE CREATE/EDIT */}
-          {(modal==='create-service'||modal==='edit-service')&&<div>
-            {form.image && <div style={{marginBottom:12,textAlign:'center'}}><img src={form.image} alt="" style={{width:120,height:80,borderRadius:10,objectFit:'cover'}} /></div>}
-            <div className="fg" style={{marginBottom:12}}>
-              <label className="fl">Service Image</label>
-              <input type="file" accept="image/*" onChange={async(e)=>{
-                const file=e.target.files?.[0]; if(!file)return;
-                try{const url=await uploadImageAdmin('services',form.name?.replace(/\s/g,'-')||'misc',file); uf('image',url);}catch(err){showToast('Upload failed','error');}
-              }} style={{fontSize:12,color:'#8a7068'}} />
-            </div>
-            <div className="fr">
-              <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Category</label><select className="fs" value={form.category||''} onChange={e=>uf('category',e.target.value)}><option value="">Select...</option>{['Hair','Braids','Nails','Skincare','Spa','Makeup','Lashes','Barber'].map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-              <div className="fg"><label className="fl">Price (K)</label><input className="fi" type="number" value={form.price||0} onChange={e=>uf('price',parseFloat(e.target.value)||0)}/></div>
-              <div className="fg"><label className="fl">Deposit (K)</label><input className="fi" type="number" value={form.deposit_amount||''} onChange={e=>uf('deposit_amount',e.target.value)} placeholder="Leave empty for branch default"/></div>
-              <div className="fg"><label className="fl">Min Duration (min)</label><input className="fi" type="number" value={form.duration||30} onChange={e=>uf('duration',parseInt(e.target.value)||30)}/></div>
-              <div className="fg"><label className="fl">Max Duration (min)</label><input className="fi" type="number" value={form.duration_max||60} onChange={e=>uf('duration_max',parseInt(e.target.value)||60)}/></div>
-              <div className="fg"><label className="fl">Branch</label><select className="fs" value={form.branch_id||''} onChange={e=>uf('branch_id',e.target.value)}><option value="">All Branches</option>{D.branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
-            </div>
-            <div className="fg"><label className="fl">Description</label><textarea className="fta" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
-          </div>}
-
-          {/* CLIENT DETAIL */}
-          {modal==='client-detail'&&sel&&<div className="dg">
-            {[['Name',sel.name],['Phone',sel.phone],['Email',sel.email||'-'],['Bookings',sel.total_bookings||0],['Spent',FP(sel.total_spent||0)],['Joined',fmtD(sel.created_at)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-            <div className="di"><div className="dl">LuminPoints</div><div className="dv" style={{color:'#c47d5a',fontSize:18,fontWeight:700}}>{sel.lumin_points||0}</div></div>
-            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.account_status||'active'}/></div></div>
-          </div>}
-
-          {/* BOOKING DETAIL */}
-          {modal==='booking-detail'&&sel&&<div className="dg">
-            {[['Client',clName(sel.client_id)+(sel.is_walk_in?' (Walk-in)':'')],['Branch',brName(sel.branch_id)],['Service',svName(sel.service_id)],['Staff',stName(sel.staff_id)],['Date & Time',`${sel.booking_date} at ${sel.booking_time}`],['Duration',`${sel.duration} mins`],['Total',FP(sel.total_amount)],['Discount',sel.discount_amount>0?`${FP(sel.discount_amount)} (${sel.points_used} pts)`:'-'],['Deposit',`${FP(sel.deposit_amount||0)} ${sel.deposit_paid?'Paid':'Unpaid'}`]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-            <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status}/></div></div>
-            <div className="di"><div className="dl">Notes</div><div className="dv">{sel.client_notes||'-'}</div></div>
-            {sel.cancellation_reason&&<div className="di"><div className="dl">Cancel Reason</div><div className="dv" style={{color:'#c94c4c'}}>{sel.cancellation_reason}</div></div>}
-          </div>}
-
-          {/* REVIEW DETAIL */}
-          {modal==='review-detail'&&sel&&<div>
-            <div className="dg">
-              {[['Client',clName(sel.client_id)],['Branch',brName(sel.branch_id)]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-              <div className="di"><div className="dl">Overall</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_overall}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></div></div>
-              <div className="di"><div className="dl">Average</div><div className="dv" style={{color:'#c9a84c'}}>{sel.rating_average?.toFixed(1)}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></div></div>
-            </div>
-            <div style={{marginTop:16,padding:16,background:'#faf7f5',borderRadius:10}}><div className="dl">Review</div><div style={{color:'#2c1810',lineHeight:1.7}}>{sel.review_text||'No text'}</div></div>
-            {sel.response_text && <div style={{marginTop:12,padding:16,background:'#f0d9cc',borderRadius:10}}><div className="dl" style={{color:'#c47d5a'}}>Salon Response</div><div style={{color:'#2c1810'}}>{sel.response_text}</div></div>}
-          </div>}
-
-          {/* DISPUTE DETAIL + RESOLVE */}
-          {modal==='dispute-detail'&&sel&&<div>
-            <div className="dg">
-              {[['Client',clName(sel.client_id)],['Branch',brName(sel.branch_id)],['Type',sel.dispute_type||sel.type||'-']].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{v}</div></div>)}
-              <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status||'pending'}/></div></div>
-            </div>
-            <div style={{marginTop:16,padding:16,background:'#faf7f5',borderRadius:10}}><div className="dl">Description</div><div style={{color:'#2c1810',lineHeight:1.7}}>{sel.description||'-'}</div></div>
-            {sel.status!=='resolved'&&<div style={{marginTop:16}}>
-              <div className="fg"><label className="fl">Resolution Type</label><select className="fs" value={form.resolution||''} onChange={e=>uf('resolution',e.target.value)}>
-                <option value="">Select...</option><option value="refund">Refund</option><option value="points_compensation">Points Compensation</option><option value="apology">Apology</option><option value="warning_to_branch">Warning to Branch</option><option value="dismissed">Dismissed</option><option value="other">Other</option>
-              </select></div>
-              <div className="fg"><label className="fl">Admin Notes</label><textarea className="fta" value={form.notes||''} onChange={e=>uf('notes',e.target.value)} placeholder="Resolution notes..."/></div>
-            </div>}
-          </div>}
-
-          {/* TICKET DETAIL + REPLY */}
-          {modal==='ticket-detail'&&sel&&<div>
-            <div className="dg">
-              {[['Ticket #',sel.ticket_number],['Category',sel.category],['From',sel.submitted_by_type],['Priority',sel.priority]].map(([l,v],i)=><div key={i} className="di"><div className="dl">{l}</div><div className="dv">{l==='Ticket #'?<span style={{color:'#c47d5a'}}>{v}</span>:v}</div></div>)}
-              <div className="di"><div className="dl">Status</div><div className="dv"><Badge s={sel.status}/></div></div>
-              <div className="di"><div className="dl">Created</div><div className="dv">{fmtDT(sel.created_at)}</div></div>
-            </div>
-            <div style={{marginTop:16}}><div className="dl">Subject</div><div style={{color:'#2c1810',fontWeight:600,marginBottom:8}}>{sel.subject}</div>
-              <div style={{padding:16,background:'#faf7f5',borderRadius:10,color:'#2c1810',lineHeight:1.7}}>{sel.description}</div>
-            </div>
-            {replies.length>0 && <div style={{marginTop:16}}>
-              <div className="dl" style={{marginBottom:8}}>Responses ({replies.length})</div>
-              {replies.map(r=><div key={r.id} className={`ri ${r.is_internal_note?'internal':''}`}>
-                <div style={{fontSize:12,color:'#8a7068',marginBottom:4}}>{r.responder_type==='admin'?adName(r.responder_id):r.responder_type} Â· {fmtDT(r.created_at)} {r.is_internal_note&&<span style={{color:'#6b8ec4'}}>(Internal Note)</span>}</div>
-                <div style={{fontSize:14,color:'#2c1810'}}>{r.message}</div>
-              </div>)}
-            </div>}
-            {sel.status!=='closed'&&<div style={{background:'#faf7f5',border:'1px solid #ede5df',borderRadius:10,padding:16,marginTop:16}}>
-              <div className="fg"><label className="fl">Reply</label><textarea className="fta" value={form.reply||''} onChange={e=>uf('reply',e.target.value)} placeholder="Type your reply..."/></div>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer'}}><input type="checkbox" checked={form.isInternal||false} onChange={e=>uf('isInternal',e.target.checked)}/> Internal note</label>
-                <button className="btn btn-primary btn-sm" onClick={()=>{replyTicket(sel.id,form.reply,form.isInternal);uf('reply','');}}><Icons.Send /> Send</button>
-              </div>
-            </div>}
-          </div>}
-
-          {/* ADJUST POINTS */}
-          {modal==='adjust-points'&&sel&&<div>
-            <div style={{marginBottom:16,padding:16,background:'#faf7f5',borderRadius:10,textAlign:'center'}}>
-              <div className="dl">Current Balance</div>
-              <div style={{fontSize:32,fontWeight:700,color:'#c47d5a'}}>{sel.lumin_points||0} pts</div>
-            </div>
-            <div className="fg"><label className="fl">Points (positive to add, negative to deduct)</label><input className="fi" type="number" value={form.points||''} onChange={e=>uf('points',e.target.value)} placeholder="e.g. 50 or -25"/></div>
-            <div className="fg"><label className="fl">Reason</label><input className="fi" value={form.reason||''} onChange={e=>uf('reason',e.target.value)} placeholder="Reason for adjustment"/></div>
-          </div>}
-
-          {/* CREATE REFUND */}
-          {modal==='create-refund'&&<div>
-            <div className="fg"><label className="fl">Booking</label><select className="fs" value={form.booking_id||''} onChange={e=>uf('booking_id',e.target.value)}>
-              <option value="">Select booking...</option>
-              {D.bookings.filter(b=>b.status==='completed'||b.status==='cancelled').map(b=><option key={b.id} value={b.id}>{clName(b.client_id)} - {svName(b.service_id)} - {b.booking_date} ({FP(b.total_amount)})</option>)}
-            </select></div>
-            <div className="fr"><div className="fg"><label className="fl">Amount (K)</label><input className="fi" type="number" value={form.amount||''} onChange={e=>uf('amount',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Type</label><select className="fs" value={form.refund_type||'full'} onChange={e=>uf('refund_type',e.target.value)}><option value="full">Full</option><option value="partial">Partial</option><option value="deposit_only">Deposit Only</option><option value="points_compensation">Points</option></select></div></div>
-            <div className="fg"><label className="fl">Reason</label><textarea className="fta" value={form.reason||''} onChange={e=>uf('reason',e.target.value)} placeholder="Reason for refund..."/></div>
-          </div>}
-
-          {/* CREATE ANNOUNCEMENT */}
-          {modal==='create-announcement'&&<div>
-            <div className="fg"><label className="fl">Title</label><input className="fi" value={form.title||''} onChange={e=>uf('title',e.target.value)} placeholder="Announcement title"/></div>
-            <div className="fg"><label className="fl">Message</label><textarea className="fta" value={form.message||''} onChange={e=>uf('message',e.target.value)} placeholder="Announcement message..." style={{minHeight:120}}/></div>
-            <div className="fr"><div className="fg"><label className="fl">Target</label><select className="fs" value={form.target||'all'} onChange={e=>uf('target',e.target.value)}><option value="all">Everyone</option><option value="branches">Branches</option><option value="clients">Clients</option><option value="staff">Staff</option></select></div>
-              <div className="fg"><label className="fl">Priority</label><select className="fs" value={form.priority||'normal'} onChange={e=>uf('priority',e.target.value)}><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></div></div>
-          </div>}
-
-          {/* CREATE PROMOTION */}
-          {modal==='create-promo'&&<div>
-            <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)} placeholder="e.g. Holiday Special"/></div>
-            <div className="fg"><label className="fl">Description</label><input className="fi" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
-            <div className="fr"><div className="fg"><label className="fl">Type *</label><select className="fs" value={form.type||''} onChange={e=>uf('type',e.target.value)}><option value="">Select...</option><option value="double_points">Double Points</option><option value="bonus_points">Bonus Points</option><option value="discount_percentage">Discount %</option><option value="discount_fixed">Discount Fixed</option><option value="free_addon">Free Add-on</option><option value="referral_bonus">Referral Bonus</option></select></div>
-              <div className="fg"><label className="fl">Value *</label><input className="fi" type="number" value={form.value||''} onChange={e=>uf('value',e.target.value)}/></div></div>
-            <div className="fr"><div className="fg"><label className="fl">Promo Code</label><input className="fi" value={form.code||''} onChange={e=>uf('code',e.target.value.toUpperCase())} placeholder="e.g. GLOW20"/></div>
-              <div className="fg"><label className="fl">Max Uses</label><input className="fi" type="number" value={form.max_uses||''} onChange={e=>uf('max_uses',e.target.value)} placeholder="Unlimited"/></div></div>
-            <div className="fr"><div className="fg"><label className="fl">Starts *</label><input className="fi" type="date" value={form.starts_at||''} onChange={e=>uf('starts_at',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Ends *</label><input className="fi" type="date" value={form.ends_at||''} onChange={e=>uf('ends_at',e.target.value)}/></div></div>
-            <div className="fg"><label className="fl">Target</label><select className="fs" value={form.target||'all'} onChange={e=>uf('target',e.target.value)}><option value="all">All Clients</option><option value="new_clients">New Clients</option><option value="returning_clients">Returning</option></select></div>
-          </div>}
-
-          {/* CREATE ADMIN */}
-          {modal==='create-admin'&&<div>
-            <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
-            <div className="fg"><label className="fl">Email *</label><input className="fi" type="email" value={form.email||''} onChange={e=>uf('email',e.target.value)}/></div>
-            <div className="fr"><div className="fg"><label className="fl">Role</label><select className="fs" value={form.role||'admin'} onChange={e=>uf('role',e.target.value)}><option value="admin">Admin</option><option value="moderator">Moderator</option><option value="support">Support</option></select></div>
-              <div className="fg"><label className="fl">Phone</label><input className="fi" value={form.phone||''} onChange={e=>uf('phone',e.target.value)}/></div></div>
-          </div>}
-
-          {/* EDIT PAGE */}
-          {modal==='edit-page'&&<div>
-            <div className="fg"><label className="fl">Title</label><input className="fi" value={form.title||''} onChange={e=>uf('title',e.target.value)}/></div>
-            <div className="fg"><label className="fl">Content</label><textarea className="fta" value={form.content||''} onChange={e=>uf('content',e.target.value)} style={{minHeight:200}}/></div>
-            <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer'}}><input type="checkbox" checked={form.is_published!==false} onChange={e=>uf('is_published',e.target.checked)}/> Published</label>
-          </div>}
-
-          {/* EDIT TEMPLATE */}
-          {modal==='edit-template'&&<div>
-            {form.subject!==undefined && <div className="fg"><label className="fl">Subject</label><input className="fi" value={form.subject||''} onChange={e=>uf('subject',e.target.value)}/></div>}
-            <div className="fg"><label className="fl">Body</label><textarea className="fta" value={form.body||''} onChange={e=>uf('body',e.target.value)} style={{minHeight:160,fontFamily:'monospace',fontSize:13}}/></div>
-            {sel?.variables?.length>0 && <div><div className="dl" style={{marginBottom:4}}>Click to insert variable:</div><div style={{display:'flex',flexWrap:'wrap',gap:6}}>{sel.variables.map(v=><span key={v} style={{background:'#f0ebe7',padding:'4px 8px',borderRadius:6,fontSize:12,color:'#c47d5a',cursor:'pointer'}} onClick={()=>uf('body',(form.body||'')+`{{${v}}}`)}>{`{{${v}}}`}</span>)}</div></div>}
-            <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8a7068',cursor:'pointer',marginTop:12}}><input type="checkbox" checked={form.is_active!==false} onChange={e=>uf('is_active',e.target.checked)}/> Active</label>
-          </div>}
-
-        </div>
-
-        {/* MODAL FOOTER */}
-        <div className="mf">
-          <button className="btn btn-secondary" onClick={closeModal}>Cancel</button>
-          {modal==='dispute-detail'&&sel?.status!=='resolved'&&<button className="btn btn-primary" onClick={()=>{updateDispute(sel.id,'resolved',form.notes,form.resolution);closeModal();}}>Resolve Dispute</button>}
-          {modal==='ticket-detail'&&sel?.status!=='closed'&&<>
-            {sel?.status!=='resolved'&&<button className="btn btn-success" onClick={()=>{updateTicket(sel.id,'resolved');closeModal();}}>Mark Resolved</button>}
-            <button className="btn btn-secondary" onClick={()=>{updateTicket(sel.id,'closed');closeModal();}}>Close Ticket</button>
-          </>}
-          {modal==='adjust-points'&&<button className="btn btn-primary" onClick={()=>{adjustPoints(sel.id,form.points,form.reason);closeModal();}}>Adjust Points</button>}
-          {modal==='create-refund'&&<button className="btn btn-primary" onClick={createRefund}>Issue Refund</button>}
-          {modal==='create-announcement'&&<button className="btn btn-primary" onClick={createAnnouncement}>Publish</button>}
-          {modal==='create-promo'&&<button className="btn btn-primary" onClick={createPromo}>Create</button>}
-          {modal==='create-admin'&&<button className="btn btn-primary" onClick={createAdmin}>Add Admin</button>}
-          {modal==='edit-page'&&<button className="btn btn-primary" onClick={savePage}><Icons.Save /> Save</button>}
-          {modal==='edit-template'&&<button className="btn btn-primary" onClick={saveTemplate}><Icons.Save /> Save</button>}
-          {modal==='edit-branch'&&<button className="btn btn-primary" onClick={saveBranchDetails}><Icons.Save /> Save Branch</button>}
-          {modal==='create-service'&&<button className="btn btn-primary" onClick={async()=>{
-            const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
-            if(error){showToast(error.message,'error');return;} showToast('Service created');closeModal();fetchAll();
-          }}><Icons.Plus /> Create Service</button>}
-          {modal==='edit-service'&&sel&&<><button className="btn btn-primary" onClick={async()=>{
-            const {error}=await supabase.from('services').update({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:form.is_active,updated_at:new Date().toISOString()}).eq('id',sel.id);
-            if(error){showToast(error.message,'error');return;} showToast('Service updated');closeModal();fetchAll();
-          }}><Icons.Save /> Save</button>
-          <button className="btn btn-secondary" onClick={async()=>{await supabase.from('services').update({is_active:!sel.is_active}).eq('id',sel.id);showToast(sel.is_active?'Service deactivated':'Service activated');closeModal();fetchAll();}}>{sel.is_active?'Deactivate':'Activate'}</button></>}
-        </div>
-      </div></div>
-    );
-  };
+  // Fix: was defined as const Modal = () => { } inside the component body.
+  // React created a new function reference on every parent re-render (every keystroke),
+  // causing it to unmount/remount the modal and destroy input focus each time.
+  // Moved to a top-level component (AdminModal) that receives its data via props so
+  // React treats it as the same stable component type across renders.
 
   // ========== MAIN RENDER ==========
   // Auth gate
@@ -1479,33 +1521,6 @@ export default function AdminDashboard() {
     const bp = window.innerWidth >= 640 ? 'wide' : 'narrow';
     const isWide = bp === 'wide';
     const is = {width:'100%',padding:'13px 16px',borderRadius:10,border:'1px solid #ede5df',fontSize:14,background:'#faf7f5',color:'#2c1810',fontFamily:'DM Sans',marginBottom:12,outline:'none',boxSizing:'border-box'};
-
-    // Fix #5: controlled input state replaces DOM getElementById reads
-    // Fix #6: authLoading prevents duplicate submissions during async operations
-    const [authEmail, setAuthEmail] = React.useState('');
-    const [authPass, setAuthPass] = React.useState('');
-    const [authLoading, setAuthLoading] = React.useState(false);
-
-    const handleLogin = async () => {
-      if (!authEmail || !authPass) { setAuthError('Please fill in all fields'); return; }
-      setAuthError(''); setAuthLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPass });
-      if (error) { setAuthError(error.message === 'Email not confirmed' ? 'Please confirm your email first.' : error.message); setAuthLoading(false); return; }
-      const { data: admins } = await supabase.from('admin_users').select('email').eq('email', authEmail);
-      if (!admins?.length) { await supabase.auth.signOut(); setAuthError('Access denied. This account is not an admin.'); setAuthLoading(false); return; }
-      setAuthUser(data.user);
-      setAuthLoading(false);
-    };
-
-    const handleReset = async () => {
-      if (!authEmail) { setAuthError('Enter your email'); return; }
-      setAuthError(''); setAuthLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: window.location.origin });
-      setAuthLoading(false);
-      if (error) { setAuthError(error.message); return; }
-      setAuthMode('reset_sent');
-    };
-
     return (
       <><style>{css}</style>
       <div style={{minHeight:'100vh',background:'#faf7f5',display:'flex',flexDirection:isWide?'row':'column',fontFamily:"'DM Sans', sans-serif"}}>
@@ -1529,22 +1544,35 @@ export default function AdminDashboard() {
             <>
               <h2 style={{fontFamily:'Fraunces, serif',fontSize:22,fontWeight:700,marginBottom:8,color:'#2c1810'}}>Reset password</h2>
               <p style={{color:'#8a7068',fontSize:14,marginBottom:24}}>Enter your admin email to receive a reset link</p>
-              {/* Fix #5: controlled input â€” value/onChange instead of getElementById */}
-              <input placeholder="Admin email" type="email" style={is} value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setAuthError('');}} />
-              {/* Fix #6: disabled while loading to prevent double submission */}
-              <button onClick={handleReset} disabled={authLoading} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background: authLoading ? '#d4a58a' :'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:authLoading?'not-allowed':'pointer',fontFamily:'DM Sans',marginBottom:16}}>{authLoading ? 'Sendingâ€¦' : 'Send Reset Link'}</button>
+              <input placeholder="Admin email" type="email" style={is} id="admin-email" onFocus={()=>setAuthError('')} />
+              <button onClick={async () => {
+                const email = document.getElementById('admin-email').value;
+                if (!email) { setAuthError('Enter your email'); return; }
+                setAuthError('');
+                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+                if (error) { setAuthError(error.message); return; }
+                setAuthMode('reset_sent');
+              }} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans',marginBottom:16}}>Send Reset Link</button>
               <button onClick={()=>{setAuthMode('login');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#8a7068',fontSize:13,cursor:'pointer',fontFamily:'DM Sans'}}>Back to login</button>
             </>
           ) : (
             <>
               <h2 style={{fontFamily:'Fraunces, serif',fontSize:24,fontWeight:700,marginBottom:4,color:'#2c1810'}}>Welcome back</h2>
               <p style={{color:'#8a7068',fontSize:14,marginBottom:24}}>Sign in to the admin dashboard</p>
-              {/* Fix #5: controlled inputs â€” value/onChange instead of getElementById */}
-              <input placeholder="Admin email" type="email" style={is} value={authEmail} onChange={e=>{setAuthEmail(e.target.value);setAuthError('');}} />
-              <input placeholder="Password" type="password" style={is} value={authPass} onChange={e=>{setAuthPass(e.target.value);setAuthError('');}}
-                onKeyDown={e => { if (e.key === 'Enter' && !authLoading) handleLogin(); }} />
-              {/* Fix #6: disabled while loading to prevent double submission */}
-              <button onClick={handleLogin} disabled={authLoading} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:authLoading?'#d4a58a':'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:authLoading?'not-allowed':'pointer',fontFamily:'DM Sans',marginBottom:12}}>{authLoading ? 'Signing inâ€¦' : 'Sign In'}</button>
+              <input placeholder="Admin email" type="email" style={is} id="admin-email" onFocus={()=>setAuthError('')} />
+              <input placeholder="Password" type="password" style={is} id="admin-pass"
+                onKeyDown={e => { if (e.key === 'Enter') document.getElementById('admin-login-btn').click(); }} />
+              <button id="admin-login-btn" onClick={async () => {
+                const email = document.getElementById('admin-email').value;
+                const pass = document.getElementById('admin-pass').value;
+                if (!email||!pass) { setAuthError('Please fill in all fields'); return; }
+                setAuthError('');
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+                if (error) { setAuthError(error.message === 'Email not confirmed' ? 'Please confirm your email first.' : error.message); return; }
+                const { data: admins } = await supabase.from('admin_users').select('email').eq('email', email);
+                if (!admins?.length) { await supabase.auth.signOut(); setAuthError('Access denied. This account is not an admin.'); return; }
+                setAuthUser(data.user);
+              }} style={{width:'100%',padding:'13px',borderRadius:10,border:'none',background:'#c47d5a',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans',marginBottom:12}}>Sign In</button>
               <button onClick={()=>{setAuthMode('forgot');setAuthError('');}} style={{width:'100%',background:'none',border:'none',color:'#8a7068',fontSize:13,cursor:'pointer',fontFamily:'DM Sans'}}>Forgot password?</button>
             </>
           )}
@@ -1607,7 +1635,16 @@ export default function AdminDashboard() {
             {page==='settings'&&<Settings />}
           </div>
         </div>
-        <Modal />
+        <AdminModal
+          modal={modal} sel={sel} form={form} uf={uf}
+          closeModal={closeModal} openModal={openModal}
+          D={D} fmtD={fmtD} fmtDT={fmtDT} showToast={showToast}
+          updateDispute={updateDispute} updateTicket={updateTicket} replyTicket={replyTicket}
+          adjustPoints={adjustPoints} createRefund={createRefund}
+          createAnnouncement={createAnnouncement} createPromo={createPromo}
+          createAdmin={createAdmin} savePage={savePage} saveTemplate={saveTemplate}
+          saveBranchDetails={saveBranchDetails} fetchAll={fetchAll}
+        />
         {toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
       </div>
     </>
