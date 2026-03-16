@@ -1,8 +1,8 @@
 {
-  "name": "adminglowbook",
+  "name": "adminluminbook",
   "private": true,
   "version": "1.0.0",
-  "description": "GlowBook - Admin Control Platform",
+  "description": "LuminBook - Admin Control Platform",
   "type": "module",
   "scripts": {
     "dev": "vite",
