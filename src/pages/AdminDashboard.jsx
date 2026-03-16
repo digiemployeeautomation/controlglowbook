@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { LayoutDashboard, Home, Users, Calendar, Star, AlertCircle, Ticket, DollarSign, Gift, Bell, Flag, MessageSquare, Settings, Search, X, Check, Eye, Pencil, Trash2, Plus, Send, Save, Sparkles, TrendingUp, RefreshCw, Menu, Activity, UserPlus, XCircle, Key, FileText, Clock, Phone, CreditCard, Lightbulb, Scissors } from 'lucide-react';
 
 // ============================================
-// GLOWBOOK ADMIN - FULL PLATFORM CONTROL
+// LUMINBOOK ADMIN - FULL PLATFORM CONTROL
 // ============================================
 
 const Icons = {
@@ -463,7 +463,7 @@ function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtD
           <div className="fg"><label className="fl">Description</label><input className="fi" value={form.description||''} onChange={e=>uf('description',e.target.value)}/></div>
           <div className="fr"><div className="fg"><label className="fl">Type *</label><select className="fs" value={form.type||''} onChange={e=>uf('type',e.target.value)}><option value="">Select...</option><option value="double_points">Double Points</option><option value="bonus_points">Bonus Points</option><option value="discount_percentage">Discount %</option><option value="discount_fixed">Discount Fixed</option><option value="free_addon">Free Add-on</option><option value="referral_bonus">Referral Bonus</option></select></div>
             <div className="fg"><label className="fl">Value *</label><input className="fi" type="number" value={form.value||''} onChange={e=>uf('value',e.target.value)}/></div></div>
-          <div className="fr"><div className="fg"><label className="fl">Promo Code</label><input className="fi" value={form.code||''} onChange={e=>uf('code',e.target.value.toUpperCase())} placeholder="e.g. GLOW20"/></div>
+          <div className="fr"><div className="fg"><label className="fl">Promo Code</label><input className="fi" value={form.code||''} onChange={e=>uf('code',e.target.value.toUpperCase())} placeholder="e.g. LUMIN20"/></div>
             <div className="fg"><label className="fl">Max Uses</label><input className="fi" type="number" value={form.max_uses||''} onChange={e=>uf('max_uses',e.target.value)} placeholder="Unlimited"/></div></div>
           <div className="fr"><div className="fg"><label className="fl">Starts *</label><input className="fi" type="date" value={form.starts_at||''} onChange={e=>uf('starts_at',e.target.value)}/></div>
             <div className="fg"><label className="fl">Ends *</label><input className="fi" type="date" value={form.ends_at||''} onChange={e=>uf('ends_at',e.target.value)}/></div></div>
@@ -822,7 +822,7 @@ export default function AdminDashboard() {
   // ========== SIDEBAR ==========
   const Sidebar = () => (
     <div className={`sidebar ${sidebarOpen?'open':''}`}>
-      <div className="sidebar-header"><div className="sidebar-logo">G</div><div className="sidebar-brand">Glow<span>Book</span> Admin</div></div>
+      <div className="sidebar-header"><div className="sidebar-logo">L</div><div className="sidebar-brand">Lumin<span>Book</span> Admin</div></div>
       <nav className="sidebar-nav">
         {navItems.map(sec => <div key={sec.s} className="sidebar-section">
           <div className="sidebar-section-title">{sec.s}</div>
@@ -1163,7 +1163,7 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== GLOWPOINTS ==========
+  // ========== LUMINPOINTS ==========
   const Points = () => {
     const circ = D.clients.reduce((s,c)=>s+(c.lumin_points||0),0);
     const earned = D.clients.reduce((s,c)=>s+(c.total_points_earned||0),0);
@@ -1526,7 +1526,7 @@ export default function AdminDashboard() {
       <div style={{minHeight:'100vh',background:'#faf7f5',display:'flex',flexDirection:isWide?'row':'column',fontFamily:"'DM Sans', sans-serif"}}>
         <div style={{background:'linear-gradient(135deg,#c47d5a,#a35e3c)',padding:isWide?'60px 48px':'52px 24px 36px',borderRadius:isWide?0:'0 0 32px 32px',textAlign:isWide?'left':'center',flex:isWide?'0 0 45%':'none',display:'flex',flexDirection:'column',justifyContent:'center',minHeight:isWide?'100vh':'auto'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:isWide?'flex-start':'center',marginBottom:16}}>
-            <div style={{width:44,height:44,background:'rgba(255,255,255,0.2)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:20}}>G</div>
+            <div style={{width:44,height:44,background:'rgba(255,255,255,0.2)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:20}}>L</div>
           </div>
           <h1 style={{fontFamily:'Fraunces, serif',fontSize:isWide?40:32,fontWeight:700,color:'#fff',marginBottom:8}}>LuminBook Admin</h1>
           <p style={{color:'rgba(255,255,255,.85)',fontSize:isWide?18:15,maxWidth:360,lineHeight:1.5}}>Platform control center for managing branches, clients & operations</p>
