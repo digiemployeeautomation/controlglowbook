@@ -680,7 +680,7 @@ export default function AdminDashboard() {
     openDisputes: D.disputes.filter(d=>d.status==='open'||d.status==='pending').length,
     openTickets: D.tickets.filter(t=>t.status==='open'||t.status==='assigned'||t.status==='in_progress').length,
     pendingReports: D.reports.filter(r=>r.status==='pending').length,
-    pendingApps: D.applications.filter(a=>a.status==='pending').length,
+    pendingApps: D.branches.filter(b=>b.approval_status==='pending').length,
     pendingWithdrawals: D.withdrawals.filter(w=>w.status==='pending'||w.status==='processing').length,
     newSuggestions: D.suggestions.filter(s=>s.status==='new').length,
   }), [D]);
@@ -882,27 +882,65 @@ export default function AdminDashboard() {
 
   // ========== BRANCHES ==========
   const Branches = () => {
-    const f = filter(D.branches,['name','location','email']);
-    const pending = D.applications.filter(a=>a.status==='pending');
+    const f = filter(D.branches,['name','location','email','owner_email']);
+    const pendingBranches = D.branches.filter(b=>b.approval_status==='pending');
     return (<div>
-      {pending.length>0 && <div className="card" style={{borderColor:'#c9a84c'}}>
-        <div className="card-header"><span className="card-title" style={{color:'#c9a84c'}}>Pending Applications ({pending.length})</span></div>
-        {pending.map(a=><div key={a.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0',borderBottom:'1px solid #ede5df'}}>
-          <div><div style={{fontWeight:600,color:'#2c1810'}}>{a.business_name}</div><div style={{fontSize:13,color:'#8a7068'}}>{a.owner_name} Â· {a.location} Â· {fmtD(a.created_at)}</div></div>
-          <ActionBtns><button className="btn btn-success btn-sm" onClick={()=>updateApp(a.id,'approved')}>Approve</button><button className="btn btn-danger btn-sm" onClick={()=>updateApp(a.id,'rejected')}>Reject</button></ActionBtns>
-        </div>)}
-      </div>}
-      <div className="tc"><div className="th"><span className="tt">All Branches ({f.length})</span><TF ph="Search branches..."/></div>
-        <table><thead><tr><th>Name</th><th>Location</th><th>Rating</th><th>Reviews</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          {f.map(b=><tr key={b.id}><td><div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:40,height:28,borderRadius:6,overflow:'hidden',background:'#f0ebe7',flexShrink:0}}>
-              {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#8a7068'}}>âŒ‚</div>}
+
+      {/* ── Pending Approval Card ── */}
+      {pendingBranches.length>0 && <div className="card" style={{borderColor:'#c9a84c',marginBottom:24}}>
+        <div className="card-header">
+          <span className="card-title" style={{color:'#c9a84c'}}>⏳ Pending Approval ({pendingBranches.length})</span>
+          <span style={{fontSize:12,color:'#8a7068'}}>These studios registered and are awaiting your approval</span>
+        </div>
+        {pendingBranches.map(b=>(
+          <div key={b.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 0',borderBottom:'1px solid #ede5df',gap:16,flexWrap:'wrap'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
+              <div style={{width:44,height:44,borderRadius:10,overflow:'hidden',background:'#f0ebe7',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <span style={{fontWeight:700,color:'#c47d5a',fontSize:16}}>{b.name?.[0]||'?'}</span>}
+              </div>
+              <div style={{minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:15,color:'#2c1810'}}>{b.name}</div>
+                <div style={{fontSize:13,color:'#8a7068',marginTop:2}}>
+                  {b.location && <span>{b.location} · </span>}
+                  {b.phone && <span>{b.phone} · </span>}
+                  <span style={{color:'#c47d5a'}}>{b.owner_email}</span>
+                </div>
+                <div style={{fontSize:11,color:'#b8a89e',marginTop:2}}>Registered {fmtD(b.created_at)}</div>
+              </div>
             </div>
-            <span style={{fontWeight:600,color:'#2c1810'}}>{b.name}</span>
-          </div></td><td>{b.location}</td><td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></td><td>{b.review_count||0}</td><td><Badge s={b.approval_status||'approved'}/></td>
-            <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('branch-detail',b)}><Icons.Eye /></button>
-              {b.approval_status!=='suspended'?<button className="btn-icon" onClick={()=>updateBranch(b.id,'suspended')}><Icons.X /></button>:<button className="btn-icon" onClick={()=>updateBranch(b.id,'approved')}><Icons.Check /></button>}
-            </ActionBtns></td></tr>)}
+            <ActionBtns>
+              <button className="btn-icon" title="View Details" onClick={()=>openModal('branch-detail',b)}><Icons.Eye /></button>
+              <button className="btn btn-success btn-sm" onClick={()=>updateBranch(b.id,'approved')}>✓ Approve</button>
+              <button className="btn btn-danger btn-sm" onClick={()=>updateBranch(b.id,'suspended')}>Reject</button>
+            </ActionBtns>
+          </div>
+        ))}
+      </div>}
+
+      {/* ── All Branches Table ── */}
+      <div className="tc"><div className="th"><span className="tt">All Branches ({f.length})</span><TF ph="Search branches..."/></div>
+        <table><thead><tr><th>Name</th><th>Owner</th><th>Location</th><th>Rating</th><th>Reviews</th><th>Approval</th><th>Active</th><th>Actions</th></tr></thead><tbody>
+          {f.map(b=><tr key={b.id}>
+            <td><div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:40,height:28,borderRadius:6,overflow:'hidden',background:'#f0ebe7',flexShrink:0}}>
+                {b.images?.[0] ? <img src={b.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#8a7068'}}>⌂</div>}
+              </div>
+              <span style={{fontWeight:600,color:'#2c1810'}}>{b.name}</span>
+            </div></td>
+            <td style={{fontSize:12,color:'#8a7068'}}>{b.owner_email||'—'}</td>
+            <td>{b.location||'—'}</td>
+            <td style={{color:'#c9a84c'}}>{b.rating?.toFixed(1)||'0.0'}<Star size={12} fill='#c9a84c' stroke='#c9a84c' strokeWidth={0} style={{marginLeft:3}}/></td>
+            <td>{b.review_count||0}</td>
+            <td><Badge s={b.approval_status||'approved'}/></td>
+            <td><span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:10,background:b.is_active?'#e8f5ec':'#fce8e8',color:b.is_active?'#4a9d6e':'#c94c4c'}}>{b.is_active?'Yes':'No'}</span></td>
+            <td><ActionBtns>
+              <button className="btn-icon" title="View" onClick={()=>openModal('branch-detail',b)}><Icons.Eye /></button>
+              {b.approval_status==='pending' && <button className="btn btn-success btn-sm" onClick={()=>updateBranch(b.id,'approved')}>Approve</button>}
+              {b.approval_status==='approved' && <button className="btn-icon" title="Suspend" onClick={()=>updateBranch(b.id,'suspended')}><Icons.X /></button>}
+              {b.approval_status==='suspended' && <button className="btn-icon" title="Reinstate" onClick={()=>updateBranch(b.id,'approved')}><Icons.Check /></button>}
+            </ActionBtns></td>
+          </tr>)}
+          {!f.length && <tr><td colSpan="8" className="es">No branches found</td></tr>}
         </tbody></table>
       </div>
     </div>);
