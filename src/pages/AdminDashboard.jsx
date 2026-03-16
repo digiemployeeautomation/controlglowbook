@@ -948,18 +948,60 @@ export default function AdminDashboard() {
 
   // ========== CLIENTS ==========
   const Clients = () => {
-    const f = filter(D.clients,['name','phone','email']);
-    return (<div className="tc"><div className="th"><span className="tt">All Clients ({f.length})</span><TF ph="Search clients..."/></div>
-      <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Bookings</th><th>LuminPoints</th><th>Spent</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {f.map(c=><tr key={c.id}><td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td><td>{c.phone}</td><td>{c.email||'-'}</td><td>{c.total_bookings||0}</td><td style={{color:'#c47d5a',fontWeight:600}}>{c.lumin_points||0}</td><td>{FP(c.total_spent||0)}</td><td><Badge s={c.account_status||'active'}/></td>
-          <td><ActionBtns>
-            <button className="btn-icon" onClick={()=>openModal('client-detail',c)}><Icons.Eye /></button>
-            <button className="btn-icon" title="Adjust Points" onClick={()=>openModal('adjust-points',c,{points:'',reason:''})}><Icons.Sparkles /></button>
-            {(c.account_status||'active')!=='banned'?<button className="btn-icon" onClick={()=>updateClient(c.id,'suspended')}><Icons.X /></button>:<button className="btn-icon" onClick={()=>updateClient(c.id,'active')}><Icons.Check /></button>}
-          </ActionBtns></td></tr>)}
-        {!f.length && <tr><td colSpan="8" className="es">No clients found</td></tr>}
-      </tbody></table>
-    </div>);
+    const [statusFilter, setStatusFilter] = React.useState('all');
+    const f = filter(D.clients,['name','phone','email']).filter(c => {
+      if (statusFilter === 'all') return true;
+      return (c.account_status || 'active') === statusFilter;
+    });
+    const counts = {
+      all: D.clients.length,
+      active: D.clients.filter(c=>(c.account_status||'active')==='active').length,
+      suspended: D.clients.filter(c=>c.account_status==='suspended').length,
+      banned: D.clients.filter(c=>c.account_status==='banned').length,
+    };
+    return (
+      <div>
+        {/* Status Filter */}
+        <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+          {[['all','All'],['active','Active'],['suspended','Suspended'],['banned','Banned']].map(([val,label])=>(
+            <button key={val} onClick={()=>setStatusFilter(val)} style={{padding:'6px 16px',borderRadius:20,border:`1.5px solid ${statusFilter===val?'#c47d5a':'#ede5df'}`,background:statusFilter===val?'#f0d9cc':'transparent',color:statusFilter===val?'#c47d5a':'#8a7068',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans'}}>
+              {label} <span style={{fontSize:11,opacity:0.7}}>({counts[val]})</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="tc"><div className="th"><span className="tt">Clients ({f.length})</span><TF ph="Search clients..."/></div>
+          <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Joined</th><th>Bookings</th><th>LuminPoints</th><th>Spent</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+            {f.map(c=>{
+              const status = c.account_status || 'active';
+              return (
+                <tr key={c.id}>
+                  <td style={{fontWeight:600,color:'#2c1810'}}>{c.name}</td>
+                  <td>{c.phone||'—'}</td>
+                  <td>{c.email||'—'}</td>
+                  <td style={{fontSize:12,color:'#8a7068'}}>{fmtD(c.created_at)}</td>
+                  <td>{c.total_bookings||0}</td>
+                  <td style={{color:'#c47d5a',fontWeight:600}}>{c.lumin_points||0}</td>
+                  <td>{FP(c.total_spent||0)}</td>
+                  <td><Badge s={status}/></td>
+                  <td><ActionBtns>
+                    <button className="btn-icon" title="View" onClick={()=>openModal('client-detail',c)}><Icons.Eye /></button>
+                    <button className="btn-icon" title="Adjust Points" onClick={()=>openModal('adjust-points',c,{points:'',reason:''})}><Icons.Sparkles /></button>
+                    {status==='active' && <button className="btn-icon" title="Suspend" onClick={()=>updateClient(c.id,'suspended')}><Icons.X /></button>}
+                    {status==='suspended' && <>
+                      <button className="btn btn-success btn-sm" onClick={()=>updateClient(c.id,'active')}>Unsuspend</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>updateClient(c.id,'banned')}>Ban</button>
+                    </>}
+                    {status==='banned' && <button className="btn btn-success btn-sm" onClick={()=>updateClient(c.id,'active')}>Unban</button>}
+                  </ActionBtns></td>
+                </tr>
+              );
+            })}
+            {!f.length && <tr><td colSpan="9" className="es">No clients found</td></tr>}
+          </tbody></table>
+        </div>
+      </div>
+    );
   };
 
   // ========== BOOKINGS ==========
