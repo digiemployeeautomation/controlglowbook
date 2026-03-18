@@ -47,6 +47,46 @@ const Icons = {
 
 const FP = (a) => `K${(Number(a)||0).toLocaleString()}`;
 
+// ── SLACK NOTIFICATIONS ──────────────────────────────────────────────────────
+// Add VITE_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/... to your .env
+// All activity log entries post to Slack. Destructive actions get orange,
+// errors get red. If the env var is missing the helper silently does nothing.
+const SLACK_WEBHOOK = 'https://hooks.slack.com/services/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';
+
+const DESTRUCTIVE_KEYWORDS = [
+  'ban','banned','suspend','suspended','delete','deleted','remove','removed',
+  'reject','rejected','refund','override','cancel','cancelled','deduct',
+  'penalty','revoke','reset','force',
+];
+
+async function sendSlack({ action, entityType, entityId, details, adminName, isError=false }) {
+  if (!SLACK_WEBHOOK) return;
+  const destructive = isError || DESTRUCTIVE_KEYWORDS.some(k => action.toLowerCase().includes(k));
+  const color  = isError ? '#c94c4c' : destructive ? '#e67e22' : '#4a9d6e';
+  const emoji  = isError ? '🚨' : destructive ? '⚠️' : '✅';
+  const time   = new Date().toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  const fields = [
+    { title:'Admin',  value: adminName || 'System', short: true },
+    { title:'Entity', value: `${entityType}${entityId ? ` · ${String(entityId).slice(0,8)}` : ''}`, short: true },
+  ];
+  if (details && Object.keys(details).length) {
+    fields.push({ title:'Details', value: JSON.stringify(details), short: false });
+  }
+  try {
+    await fetch(SLACK_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `${emoji} *LuminBook Admin* · ${time}`,
+        attachments: [{ color, title: action, fields, footer: 'LuminBook Admin', ts: Math.floor(Date.now()/1000) }],
+      }),
+    });
+  } catch (e) {
+    console.warn('Slack notification failed:', e); // never break the UI
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -353,7 +393,7 @@ function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtD
             <div className="fg"><label className="fl">Name *</label><input className="fi" value={form.name||''} onChange={e=>uf('name',e.target.value)}/></div>
             <div className="fg"><label className="fl">Category</label><select className="fs" value={form.category||''} onChange={e=>uf('category',e.target.value)}><option value="">Select...</option>{['Hair','Braids','Nails','Skincare','Spa','Makeup','Lashes','Barber'].map(c=><option key={c} value={c}>{c}</option>)}</select></div>
             <div className="fg"><label className="fl">Price (K)</label><input className="fi" type="number" value={form.price||0} onChange={e=>uf('price',parseFloat(e.target.value)||0)}/></div>
-            <div className="fg"><label className="fl">Deposit (K)</label><input className="fi" type="number" value={form.deposit_amount||''} onChange={e=>uf('deposit_amount',e.target.value)} placeholder="Leave empty for branch default"/></div>
+            <div className="fg"><label className="fl">Deposit (K)</label><input className="fi" type="number" value={form.deposit_amount??''} onChange={e=>uf('deposit_amount',e.target.value)} placeholder="Leave empty for branch default"/></div>
             <div className="fg"><label className="fl">Min Duration (min)</label><input className="fi" type="number" value={form.duration||30} onChange={e=>uf('duration',parseInt(e.target.value)||30)}/></div>
             <div className="fg"><label className="fl">Max Duration (min)</label><input className="fi" type="number" value={form.duration_max||60} onChange={e=>uf('duration_max',parseInt(e.target.value)||60)}/></div>
             <div className="fg"><label className="fl">Branch</label><select className="fs" value={form.branch_id||''} onChange={e=>uf('branch_id',e.target.value)}><option value="">All Branches</option>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
@@ -512,11 +552,11 @@ function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtD
         {modal==='edit-template'&&<button className="btn btn-primary" onClick={saveTemplate}><Icons.Save /> Save</button>}
         {modal==='edit-branch'&&<button className="btn btn-primary" onClick={saveBranchDetails}><Icons.Save /> Save Branch</button>}
         {modal==='create-service'&&<button className="btn btn-primary" onClick={async()=>{
-          const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
+          const {error}=await supabase.from('services').insert({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount!==''&&form.deposit_amount!=null?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:true,created_at:new Date().toISOString()});
           if(error){showToast(error.message,'error');return;} showToast('Service created');closeModal();fetchAll();
         }}><Icons.Plus /> Create Service</button>}
         {modal==='edit-service'&&sel&&<><button className="btn btn-primary" onClick={async()=>{
-          const {error}=await supabase.from('services').update({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:form.is_active,updated_at:new Date().toISOString()}).eq('id',sel.id);
+          const {error}=await supabase.from('services').update({name:form.name,category:form.category,description:form.description,price:form.price,duration:form.duration,duration_max:form.duration_max,deposit_amount:form.deposit_amount!==''&&form.deposit_amount!=null?parseFloat(form.deposit_amount):null,branch_id:form.branch_id||null,is_active:form.is_active,updated_at:new Date().toISOString()}).eq('id',sel.id);
           if(error){showToast(error.message,'error');return;} showToast('Service updated');closeModal();fetchAll();
         }}><Icons.Save /> Save</button>
         <button className="btn btn-secondary" onClick={async()=>{await supabase.from('services').update({is_active:!sel.is_active}).eq('id',sel.id);showToast(sel.is_active?'Service deactivated':'Service activated');closeModal();fetchAll();}}>{sel.is_active?'Deactivate':'Activate'}</button></>}
@@ -574,7 +614,13 @@ export default function AdminDashboard() {
     setPage('dashboard');
   };
 
-  const showToast = (msg, type='success') => { setToast({msg,type}); setTimeout(() => setToast(null), 3000); };
+  const showToast = (msg, type='success') => {
+    setToast({msg,type});
+    setTimeout(() => setToast(null), 3000);
+    if (type === 'error') {
+      sendSlack({ action: `Error: ${msg}`, entityType: 'ui', adminName: adminUser?.name, isError: true });
+    }
+  };
   const uf = (k,v) => setForm(p => ({...p,[k]:v}));
   const openModal = (m, item=null, f={}) => { setModal(m); setSel(item); setForm(f); };
   const closeModal = () => { setModal(null); setSel(null); setForm({}); };
@@ -654,6 +700,7 @@ export default function AdminDashboard() {
   const log = async (action, entityType, entityId=null, details={}) => {
     if (!adminUser) return;
     await supabase.from('admin_activity_log').insert({ admin_id:adminUser.id, action, entity_type:entityType, entity_id:entityId, details });
+    sendSlack({ action, entityType, entityId, details, adminName: adminUser.name });
   };
 
   const stats = useMemo(() => ({
@@ -1280,7 +1327,7 @@ export default function AdminDashboard() {
             <td>{s.images?.[0] ? <img src={s.images[0]} alt="" style={{width:40,height:40,borderRadius:8,objectFit:'cover'}} /> : <div style={{width:40,height:40,borderRadius:8,background:'#f0ebe7',display:'flex',alignItems:'center',justifyContent:'center'}}><Sparkles size={16} color="#c47d5a"/></div>}</td>
             <td style={{fontWeight:600,color:'#2c1810'}}>{s.name}</td><td>{s.category||'-'}</td>
             <td>{FP(s.price)}</td>
-            <td>{s.deposit_amount ? FP(s.deposit_amount) : <span style={{color:'#999',fontSize:11}}>branch default</span>}</td>
+            <td>{s.deposit_amount!=null ? FP(s.deposit_amount) : <span style={{color:'#999',fontSize:11}}>branch default</span>}</td>
             <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
             <td>{s.branch_id ? brName(s.branch_id) : 'All'}</td>
             <td><Badge s={s.is_active?'active':'suspended'}/></td>
