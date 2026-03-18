@@ -47,7 +47,6 @@ const Icons = {
 
 const FP = (a) => `K${(Number(a)||0).toLocaleString()}`;
 
-
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -66,7 +65,6 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#faf7f5;color:#2c
 .tab-content{animation:tabSlide .25s cubic-bezier(.16,1,.3,1) both}
 .badge-pulse{animation:badgePulse 2s ease-in-out infinite}
 .skeleton{background:linear-gradient(90deg,#ede5df 25%,#f5f0ed 50%,#ede5df 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
-.stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
 .stagger-1{animation-delay:.05s}.stagger-2{animation-delay:.1s}.stagger-3{animation-delay:.15s}.stagger-4{animation-delay:.2s}
 .admin{display:flex;min-height:100vh}
 .sidebar{width:260px;background:#1a1215;border-right:1px solid #2a1f23;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform 0.3s}
@@ -166,7 +164,7 @@ tr:hover{background:rgba(196,125,90,0.04)}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.mobile-menu{display:block}.stats-grid{grid-template-columns:1fr 1fr}.dg,.fr{grid-template-columns:1fr}.topbar-search{display:none}}
 `;
 
-// â”€â”€â”€ IMAGE UPLOAD UTILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── IMAGE UPLOAD UTILITY ────────────────────────────────────────────────────
 async function uploadImageAdmin(bucket, folder, file) {
   const ext = file.name.split('.').pop();
   const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -179,8 +177,6 @@ async function uploadImageAdmin(bucket, folder, file) {
 function AdminImageUpload({ currentUrl, onUpload, bucket, folder, size = 64, round = false, label, onRemove }) {
   const [uploading, setUploading] = React.useState(false);
   const [preview, setPreview] = React.useState(currentUrl || null);
-  // Fix: was Math.random() which generated a new id on every render, breaking getElementById clicks.
-  // useRef keeps the same id for the lifetime of this component instance.
   const uidRef = React.useRef(`aiu-${bucket}-${folder}-${Math.random().toString(36).slice(2)}`);
   const uid = uidRef.current;
 
@@ -253,7 +249,7 @@ function AdminGalleryUpload({ images = [], onUpdate, bucket, folder }) {
         {list.map((img,i) => (
           <div key={i} style={{width:90,height:64,borderRadius:8,overflow:'hidden',position:'relative',flexShrink:0}}>
             <img src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} />
-            <button onClick={() => remove(i)} style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(0,0,0,.7)',border:'none',color:'#2c1810',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>Ã—</button>
+            <button onClick={() => remove(i)} style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(0,0,0,.7)',border:'none',color:'#2c1810',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
           </div>
         ))}
         <div onClick={() => document.getElementById(uid).click()}
@@ -267,10 +263,14 @@ function AdminGalleryUpload({ images = [], onUpdate, bucket, folder }) {
   );
 }
 
-// â”€â”€â”€ ADMIN MODAL (top-level component) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// IMPORTANT: This must be defined OUTSIDE AdminDashboard so React sees the same
-// stable component type on every render. Defining it inside (as a const arrow fn)
-// causes React to treat it as a new type on every keystroke â†’ unmount â†’ focus lost.
+// ─── FIX #1: Badge moved to MODULE LEVEL so AdminModal can access it ────────
+// Previously defined inside AdminDashboard(), which made it invisible to the
+// top-level AdminModal component → ReferenceError on every modal open.
+function Badge({ s }) {
+  return <span className={`bs ${s}`}>{s}</span>;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtDT, showToast,
   updateDispute, updateTicket, replyTicket, adjustPoints, createRefund,
   createAnnouncement, createPromo, createAdmin, savePage, saveTemplate, saveBranchDetails, fetchAll }) {
@@ -293,7 +293,7 @@ function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtD
     'client-detail':`Client: ${sel?.name}`,
     'booking-detail':'Booking Details',
     'review-detail':'Review Details',
-    'dispute-detail':'Dispute â€” Resolve',
+    'dispute-detail':'Dispute – Resolve',
     'ticket-detail':`Ticket: ${sel?.ticket_number}`,
     'adjust-points':`Adjust Points: ${sel?.name}`,
     'create-refund':'Issue Refund',
@@ -415,7 +415,7 @@ function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtD
           {replies.length>0 && <div style={{marginTop:16}}>
             <div className="dl" style={{marginBottom:8}}>Responses ({replies.length})</div>
             {replies.map(r=><div key={r.id} className={`ri ${r.is_internal_note?'internal':''}`}>
-              <div style={{fontSize:12,color:'#8a7068',marginBottom:4}}>{r.responder_type==='admin'?adName(r.responder_id):r.responder_type} Â· {fmtDT(r.created_at)} {r.is_internal_note&&<span style={{color:'#6b8ec4'}}>(Internal Note)</span>}</div>
+              <div style={{fontSize:12,color:'#8a7068',marginBottom:4}}>{r.responder_type==='admin'?adName(r.responder_id):r.responder_type} · {fmtDT(r.created_at)} {r.is_internal_note&&<span style={{color:'#6b8ec4'}}>(Internal Note)</span>}</div>
               <div style={{fontSize:14,color:'#2c1810'}}>{r.message}</div>
             </div>)}
           </div>}
@@ -526,11 +526,10 @@ function AdminModal({ modal, sel, form, uf, closeModal, openModal, D, fmtD, fmtD
 }
 
 export default function AdminDashboard() {
-  // â”€â”€ AUTH STATE â”€â”€
   const [authUser, setAuthUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [authMode, setAuthMode] = useState('login'); // login | forgot | reset_sent
+  const [authMode, setAuthMode] = useState('login');
 
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -540,7 +539,6 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState(null);
 
-  // Offline detection
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   useEffect(() => {
     const goOff = () => setIsOffline(true);
@@ -549,16 +547,15 @@ export default function AdminDashboard() {
     window.addEventListener('online', goOn);
     return () => { window.removeEventListener('offline', goOff); window.removeEventListener('online', goOn); };
   }, []);
+
   const [sel, setSel] = useState(null);
   const [form, setForm] = useState({});
   const [settingsTab, setSettingsTab] = useState('general');
   const [editSettings, setEditSettings] = useState(null);
 
-  // Data stores
   const [D, setD] = useState({ branches:[], clients:[], staff:[], services:[], bookings:[], reviews:[], disputes:[], tickets:[], ticketReplies:[], reports:[], refunds:[], flags:[], promos:[], templates:[], announcements:[], pages:[], admins:[], settings:null, points:[], applications:[], log:[], waitlist:[], referrals:[], invoices:[], smsLogs:[], subscriptions:[], withdrawals:[], salonWallets:[], suggestions:[] });
   const [adminUser, setAdminUser] = useState(null);
 
-  // â”€â”€ AUTH CHECK â”€â”€
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthUser(session?.user || null);
@@ -622,11 +619,9 @@ export default function AdminDashboard() {
     ]);
     const d = { branches:br.data||[], clients:cl.data||[], staff:st.data||[], services:sv.data||[], bookings:bk.data||[], reviews:rv.data||[], disputes:di.data||[], tickets:tk.data||[], ticketReplies:tr.data||[], reports:rc.data||[], refunds:rf.data||[], flags:ff.data||[], promos:pr.data||[], templates:nt.data||[], announcements:an.data||[], pages:pp.data||[], admins:au.data||[], settings:bs.data||null, points:pt.data||[], applications:ap.data||[], log:al.data||[], waitlist:wl.data||[], referrals:ref.data||[], invoices:inv.data||[], smsLogs:sms.data||[], subscriptions:sub.data||[], withdrawals:wd.data||[], salonWallets:wa.data||[], suggestions:sg.data||[] };
     setD(d);
-    // Strict admin verification â€” must match an admin_users record
     if (authUser) {
       const matched = d.admins.find(a => a.email === authUser.email);
       if (!matched) {
-        // Not an admin â€” sign out and block access
         await supabase.auth.signOut();
         setAuthUser(null);
         setAdminUser(null);
@@ -638,7 +633,6 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  // Helpers
   const getName = (arr,id) => arr.find(x=>x.id===id)?.name||'Unknown';
   const brName = id => getName(D.branches,id);
   const clName = id => getName(D.clients,id);
@@ -657,13 +651,11 @@ export default function AdminDashboard() {
     }));
   };
 
-  // Activity logging
   const log = async (action, entityType, entityId=null, details={}) => {
     if (!adminUser) return;
     await supabase.from('admin_activity_log').insert({ admin_id:adminUser.id, action, entity_type:entityType, entity_id:entityId, details });
   };
 
-  // Stats
   const stats = useMemo(() => ({
     totalBranches: D.branches.length,
     activeBranches: D.branches.filter(b=>b.is_active).length,
@@ -685,7 +677,6 @@ export default function AdminDashboard() {
     newSuggestions: D.suggestions.filter(s=>s.status==='new').length,
   }), [D]);
 
-  // ============ ALL ACTIONS ============
   const updateBranch = async (id,status,reason='') => {
     await supabase.from('branches').update({approval_status:status,is_active:status==='approved',suspension_reason:reason}).eq('id',id);
     await log(`Branch ${status}`,'branch',id,{reason}); showToast(`Branch ${status}`); fetchAll();
@@ -803,7 +794,6 @@ export default function AdminDashboard() {
     await log(`${label} deleted`,label,id); showToast(`${label} deleted`); fetchAll();
   };
 
-  // Navigation
   const navItems = [
     {s:'Overview',items:[{id:'dashboard',l:'Dashboard',i:Icons.Dashboard},{id:'activity',l:'Activity Log',i:Icons.Activity}]},
     {s:'Management',items:[{id:'branches',l:'Branches',i:Icons.Branch,b:stats.pendingApps||null},{id:'services',l:'Services',i:Icons.Star},{id:'clients',l:'Clients',i:Icons.Users},{id:'bookings',l:'Bookings',i:Icons.Calendar},{id:'staff',l:'Staff',i:Icons.Users},{id:'waitlist',l:'Waitlist',i:Icons.Calendar},{id:'referrals',l:'Referrals',i:Icons.Gift}]},
@@ -814,12 +804,12 @@ export default function AdminDashboard() {
   ];
   const titles = {dashboard:'Dashboard',activity:'Activity Log',branches:'Branch Management',services:'Service Management',clients:'Client Management',bookings:'Booking Management',staff:'Staff Directory',reviews:'Review Moderation',disputes:'Dispute Resolution',tickets:'Support Tickets',reports:'Reported Content',financials:'Financial Overview',invoices:'Invoice Management',subscriptions:'Salon Subscriptions',points:'LuminPoints Management',promotions:'Promotions',announcements:'Announcements',notifications:'Notification Templates',sms:'SMS Logs',settings:'Platform Settings',waitlist:'Waitlist Management',referrals:'Referral Program',suggestions:'Suggestion Box'};
 
-  // Shared components
+  // NOTE: TF and ActionBtns remain here as they're only used inside AdminDashboard's
+  // inner page components which have closure access. Badge was the only one needed
+  // at module level because AdminModal (a sibling) references it.
   const TF = ({ph}) => <div className="tf"><Icons.Search /><input placeholder={ph||'Filter...'} value={tSearch} onChange={e=>setTSearch(e.target.value)} /></div>;
-  const Badge = ({s}) => <span className={`bs ${s}`}>{s}</span>;
   const ActionBtns = ({children}) => <div style={{display:'flex',gap:4}}>{children}</div>;
 
-  // ========== SIDEBAR ==========
   const Sidebar = () => (
     <div className={`sidebar ${sidebarOpen?'open':''}`}>
       <div className="sidebar-header"><div className="sidebar-logo">L</div><div className="sidebar-brand">Lumin<span>Book</span> Admin</div></div>
@@ -841,7 +831,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== DASHBOARD ==========
   const Dashboard = () => (
     <div>
       <div className="stats-grid">
@@ -855,7 +844,7 @@ export default function AdminDashboard() {
       {stats.pendingWithdrawals > 0 && (
         <div style={{background:'#fff8e1',border:'1.5px solid #ffe082',borderRadius:12,padding:'14px 20px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}} onClick={()=>setPage('withdrawals')}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>ðŸ’¸</span>
+            <span style={{fontSize:18}}>💸</span>
             <div><span style={{fontWeight:700,fontSize:14,color:'#6d5600'}}>{stats.pendingWithdrawals} pending payout{stats.pendingWithdrawals!==1?'s':''}</span><span style={{fontSize:13,color:'#8a6d00',marginLeft:8}}>require manual payment</span></div>
           </div>
           <button className="btn btn-sm" style={{background:'#e65100',color:'#fff'}}>Review Now</button>
@@ -870,7 +859,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== ACTIVITY LOG ==========
   const ActivityLog = () => (
     <div className="tc"><div className="th"><span className="tt">Recent Activity</span><button className="btn btn-secondary btn-sm" onClick={fetchAll}><Icons.Refresh /> Refresh</button></div>
       <table><thead><tr><th>Admin</th><th>Action</th><th>Entity</th><th>Time</th></tr></thead><tbody>
@@ -880,13 +868,10 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== BRANCHES ==========
   const Branches = () => {
     const f = filter(D.branches,['name','location','email','owner_email']);
     const pendingBranches = D.branches.filter(b=>b.approval_status==='pending');
     return (<div>
-
-      {/* ── Pending Approval Card ── */}
       {pendingBranches.length>0 && <div className="card" style={{borderColor:'#c9a84c',marginBottom:24}}>
         <div className="card-header">
           <span className="card-title" style={{color:'#c9a84c'}}>⏳ Pending Approval ({pendingBranches.length})</span>
@@ -916,8 +901,6 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>}
-
-      {/* ── All Branches Table ── */}
       <div className="tc"><div className="th"><span className="tt">All Branches ({f.length})</span><TF ph="Search branches..."/></div>
         <table><thead><tr><th>Name</th><th>Owner</th><th>Location</th><th>Rating</th><th>Reviews</th><th>Approval</th><th>Active</th><th>Actions</th></tr></thead><tbody>
           {f.map(b=><tr key={b.id}>
@@ -938,15 +921,13 @@ export default function AdminDashboard() {
               {b.approval_status==='pending' && <button className="btn btn-success btn-sm" onClick={()=>updateBranch(b.id,'approved')}>Approve</button>}
               {b.approval_status==='approved' && <button className="btn-icon" title="Suspend" onClick={()=>updateBranch(b.id,'suspended')}><Icons.X /></button>}
               {b.approval_status==='suspended' && <button className="btn-icon" title="Reinstate" onClick={()=>updateBranch(b.id,'approved')}><Icons.Check /></button>}
-            </ActionBtns></td>
-          </tr>)}
+            </ActionBtns></td></tr>)}
           {!f.length && <tr><td colSpan="8" className="es">No branches found</td></tr>}
         </tbody></table>
       </div>
     </div>);
   };
 
-  // ========== CLIENTS ==========
   const Clients = () => {
     const [statusFilter, setStatusFilter] = React.useState('all');
     const f = filter(D.clients,['name','phone','email']).filter(c => {
@@ -961,7 +942,6 @@ export default function AdminDashboard() {
     };
     return (
       <div>
-        {/* Status Filter */}
         <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
           {[['all','All'],['active','Active'],['suspended','Suspended'],['banned','Banned']].map(([val,label])=>(
             <button key={val} onClick={()=>setStatusFilter(val)} style={{padding:'6px 16px',borderRadius:20,border:`1.5px solid ${statusFilter===val?'#c47d5a':'#ede5df'}`,background:statusFilter===val?'#f0d9cc':'transparent',color:statusFilter===val?'#c47d5a':'#8a7068',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans'}}>
@@ -969,7 +949,6 @@ export default function AdminDashboard() {
             </button>
           ))}
         </div>
-
         <div className="tc"><div className="th"><span className="tt">Clients ({f.length})</span><TF ph="Search clients..."/></div>
           <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Joined</th><th>Bookings</th><th>LuminPoints</th><th>Spent</th><th>Status</th><th>Actions</th></tr></thead><tbody>
             {f.map(c=>{
@@ -1004,7 +983,6 @@ export default function AdminDashboard() {
     );
   };
 
-  // ========== BOOKINGS ==========
   const Bookings = () => {
     const f = filter(D.bookings,[b=>clName(b.client_id),b=>svName(b.service_id),b=>brName(b.branch_id),'status']);
     return (<div>
@@ -1030,7 +1008,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== STAFF ==========
   const Staff = () => {
     const f = filter(D.staff,['name','role',s=>brName(s.branch_id)]);
     return (<div className="tc"><div className="th"><span className="tt">All Staff ({f.length})</span><TF ph="Search staff..."/></div>
@@ -1046,7 +1023,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== REVIEWS ==========
   const Reviews = () => {
     const f = filter(D.reviews,[r=>clName(r.client_id),r=>brName(r.branch_id),'review_text']);
     return (<div className="tc"><div className="th"><span className="tt">All Reviews ({f.length})</span><TF ph="Search reviews..."/></div>
@@ -1060,7 +1036,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== DISPUTES ==========
   const Disputes = () => {
     const f = filter(D.disputes,[d=>clName(d.client_id),d=>brName(d.branch_id),'dispute_type','description','status']);
     return (<div className="tc"><div className="th"><span className="tt">Disputes ({f.length})</span><TF ph="Search disputes..."/></div>
@@ -1072,7 +1047,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== TICKETS (with reply count) ==========
   const Tickets = () => {
     const f = filter(D.tickets,['ticket_number','subject','category','status']);
     const replyCount = id => D.ticketReplies.filter(r=>r.ticket_id===id).length;
@@ -1088,7 +1062,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== REPORTS ==========
   const Reports = () => (
     <div className="tc"><div className="th"><span className="tt">Reported Content ({D.reports.length})</span></div>
       <table><thead><tr><th>Type</th><th>Reason</th><th>Description</th><th>Reporter</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>
@@ -1099,7 +1072,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== FINANCIALS ==========
   const Financials = () => (
     <div>
       <div className="stats-grid">
@@ -1119,7 +1091,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== WITHDRAWALS (Manual Payout Management) ==========
   const Withdrawals = () => {
     const [confirmAction, setConfirmAction] = useState(null);
     const [processing, setProcessing] = useState(null);
@@ -1155,7 +1126,7 @@ export default function AdminDashboard() {
             }
           }
           await log('Withdrawal rejected','withdrawal',id,{amount:wd?.amount,phone:wd?.withdraw_to_phone});
-          showToast('Withdrawal rejected â€” funds returned to wallet');
+          showToast('Withdrawal rejected — funds returned to wallet');
         }
         fetchAll();
       } catch(e) { showToast('Error: '+e.message,'error'); }
@@ -1170,18 +1141,15 @@ export default function AdminDashboard() {
         <div className="stat-card"><div className="stat-header"><span className="stat-label">Rejected</span><div className="stat-icon red"><Icons.X /></div></div><div className="stat-value">{rejected.length}</div></div>
         <div className="stat-card"><div className="stat-header"><span className="stat-label">All Time</span><div className="stat-icon gold"><Icons.Dollar /></div></div><div className="stat-value">{D.withdrawals.length}</div></div>
       </div>
-
-      {/* Pending payouts requiring action */}
       {pending.length > 0 && (
         <div style={{background:'#fff8e1',border:'1.5px solid #ffe082',borderRadius:12,padding:'16px 20px',marginBottom:20,display:'flex',alignItems:'flex-start',gap:10}}>
           <span style={{flexShrink:0}}><AlertCircle size={18} color="#6d5600"/></span>
           <div>
             <div style={{fontWeight:700,fontSize:14,color:'#6d5600',marginBottom:2}}>Manual Payouts Required</div>
-            <div style={{fontSize:13,color:'#8a6d00',lineHeight:1.5}}>There are <strong>{pending.length}</strong> pending withdrawal requests totalling <strong>{FP(totalPending)}</strong>. Send the funds via mobile money to each recipient, then click <strong>"Mark as Paid"</strong> to confirm. Click "Reject" to return funds to the salon's wallet.</div>
+            <div style={{fontSize:13,color:'#8a6d00',lineHeight:1.5}}>There are <strong>{pending.length}</strong> pending withdrawal requests totalling <strong>{FP(totalPending)}</strong>. Send the funds via mobile money to each recipient, then click <strong>"Mark as Paid"</strong> to confirm.</div>
           </div>
         </div>
       )}
-
       <div className="tc">
         <div className="th">
           <span className="tt">Withdrawal Requests ({searchedWds.length})</span>
@@ -1231,7 +1199,7 @@ export default function AdminDashboard() {
                       </ActionBtns>
                     )
                   ) : (
-                    <span style={{fontSize:11,color:'#8a7068'}}>{wd.processed_at ? `Processed ${fmtDT(wd.processed_at)}` : 'â€”'}</span>
+                    <span style={{fontSize:11,color:'#8a7068'}}>{wd.processed_at ? `Processed ${fmtDT(wd.processed_at)}` : '—'}</span>
                   )}
                 </td>
               </tr>
@@ -1243,7 +1211,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== LUMINPOINTS ==========
   const Points = () => {
     const circ = D.clients.reduce((s,c)=>s+(c.lumin_points||0),0);
     const earned = D.clients.reduce((s,c)=>s+(c.total_points_earned||0),0);
@@ -1263,13 +1230,12 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== PROMOTIONS ==========
   const Promotions = () => (
     <div>
       <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-promo')}><Icons.Plus /> Create Promotion</button></div>
       <div className="tc"><div className="th"><span className="tt">Promotions ({D.promos.length})</span></div>
         <table><thead><tr><th>Name</th><th>Type</th><th>Code</th><th>Value</th><th>Uses</th><th>Active</th><th>Period</th><th>Actions</th></tr></thead><tbody>
-          {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'âˆž'}</td><td>{p.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
+          {D.promos.map(p=><tr key={p.id}><td style={{fontWeight:600,color:'#2c1810'}}>{p.name}</td><td>{p.type?.replace(/_/g,' ')}</td><td style={{color:'#c47d5a',fontWeight:600}}>{p.code||'-'}</td><td>{p.value}</td><td>{p.uses_count||0}/{p.max_uses||'∞'}</td><td>{p.is_active?<Icons.Check style={{color:'#2e7d32'}}/>:<Icons.X style={{color:'#c94c4c'}}/>}</td><td style={{fontSize:12}}>{fmtD(p.starts_at)} - {fmtD(p.ends_at)}</td>
             <td><button className="btn-icon" onClick={()=>deleteItem('promotions',p.id,'Promotion')}><Icons.Trash /></button></td></tr>)}
           {!D.promos.length && <tr><td colSpan="8" className="es">No promotions</td></tr>}
         </tbody></table>
@@ -1277,7 +1243,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== ANNOUNCEMENTS ==========
   const Announcements = () => (
     <div>
       <div style={{marginBottom:16}}><button className="btn btn-primary" onClick={()=>openModal('create-announcement')}><Icons.Plus /> Create Announcement</button></div>
@@ -1291,7 +1256,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== NOTIFICATION TEMPLATES ==========
   const Templates = () => (
     <div className="tc"><div className="th"><span className="tt">Notification Templates ({D.templates.length})</span></div>
       <table><thead><tr><th>Name</th><th>Type</th><th>Event</th><th>Active</th><th>Actions</th></tr></thead><tbody>
@@ -1301,10 +1265,8 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== SETTINGS ==========
   const settingsFields = {'Business Name':'business_name','Support Email':'support_email','Support Phone':'support_phone','Platform Fee (%)':'platform_fee','Late Payment Penalty (K)':'late_payment_penalty','Payment Due Days':'payment_due_days','Points per Booking':'points_per_booking','Points per Review':'points_per_review','Points per Referral':'points_per_referral','First Booking Bonus':'points_first_booking','Points to Currency Rate':'points_to_currency_rate','Inactivity Expiry (months)':'points_inactivity_expiry_months','Dispute Cash Comp. (K)':'dispute_cash_compensation','Dispute Points Comp.':'dispute_points_compensation','Review Edit Days':'review_edit_days'};
 
-  // ========== SERVICES MANAGEMENT ==========
   const Services = () => {
     const f = filter(D.services,['name','category']);
     return (<div>
@@ -1319,7 +1281,7 @@ export default function AdminDashboard() {
             <td style={{fontWeight:600,color:'#2c1810'}}>{s.name}</td><td>{s.category||'-'}</td>
             <td>{FP(s.price)}</td>
             <td>{s.deposit_amount ? FP(s.deposit_amount) : <span style={{color:'#999',fontSize:11}}>branch default</span>}</td>
-            <td>{s.duration}{s.duration_max>s.duration?`â€“${s.duration_max}`:''} min</td>
+            <td>{s.duration}{s.duration_max>s.duration?`–${s.duration_max}`:''} min</td>
             <td>{s.branch_id ? brName(s.branch_id) : 'All'}</td>
             <td><Badge s={s.is_active?'active':'suspended'}/></td>
             <td><ActionBtns><button className="btn-icon" onClick={()=>openModal('edit-service',s,{name:s.name,category:s.category||'',description:s.description||'',price:s.price||0,duration:s.duration||30,duration_max:s.duration_max||60,branch_id:s.branch_id||'',is_active:s.is_active,deposit_amount:s.deposit_amount??''})}><Icons.Edit /></button></ActionBtns></td>
@@ -1329,7 +1291,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== WAITLIST ==========
   const Waitlist = () => {
     const f = filter(D.waitlist||[],[w=>clName(w.client_id),w=>brName(w.branch_id),'status']);
     return (<div>
@@ -1355,7 +1316,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== REFERRALS ==========
   const Referrals = () => {
     const f = filter(D.referrals||[],[r=>clName(r.referrer_id),r=>clName(r.referred_id),'status','referral_code']);
     return (<div>
@@ -1377,7 +1337,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== INVOICES ==========
   const Invoices = () => {
     const f = filter(D.invoices,[i=>brName(i.branch_id),'status','invoice_number']);
     const totalOwed = D.invoices.filter(i=>i.status==='pending'||i.status==='overdue').reduce((s,i)=>s+(i.total_amount||i.subtotal||0),0);
@@ -1393,7 +1352,7 @@ export default function AdminDashboard() {
           {f.map(inv=><tr key={inv.id}>
             <td style={{fontWeight:600,color:'#c47d5a'}}>{inv.invoice_number||inv.id?.slice(0,8)}</td>
             <td>{brName(inv.branch_id)}</td>
-            <td>{inv.period_start ? `${fmtD(inv.period_start)} â€“ ${fmtD(inv.period_end)}` : inv.period||'-'}</td>
+            <td>{inv.period_start ? `${fmtD(inv.period_start)} – ${fmtD(inv.period_end)}` : inv.period||'-'}</td>
             <td>{FP(inv.subtotal||0)}</td>
             <td style={{color:inv.penalty>0?'#c94c4c':'inherit'}}>{inv.penalty>0?FP(inv.penalty):'-'}</td>
             <td style={{fontWeight:600,color:'#2c1810'}}>{FP(inv.total_amount||inv.subtotal||0)}</td>
@@ -1417,7 +1376,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== SUBSCRIPTIONS ==========
   const Subscriptions = () => {
     const f = filter(D.subscriptions,[s=>brName(s.branch_id),'plan','status']);
     return (<div>
@@ -1442,7 +1400,6 @@ export default function AdminDashboard() {
     </div>);
   };
 
-  // ========== SMS LOGS ==========
   const SmsLogs = () => {
     const f = filter(D.smsLogs,['recipient','message','status','message_type']);
     const delivered = D.smsLogs.filter(s=>s.status==='delivered'||s.status==='sent').length;
@@ -1553,7 +1510,6 @@ export default function AdminDashboard() {
   const Settings = () => (
     <div>
       <div className="tabs">{['general','features','pages','admins'].map(t=><div key={t} className={`tab ${settingsTab===t?'active':''}`} onClick={()=>setSettingsTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</div>)}</div>
-
       {settingsTab==='general' && D.settings && <div className="card">
         <div className="card-header"><span className="card-title">Business Settings</span>
           {!editSettings ? <button className="btn btn-secondary btn-sm" onClick={()=>setEditSettings({...D.settings})}><Icons.Edit /> Edit</button>
@@ -1562,21 +1518,18 @@ export default function AdminDashboard() {
         {!editSettings ? <div className="dg">{Object.entries(settingsFields).map(([l,k])=><div key={k} className="di"><div className="dl">{l}</div><div className="dv">{D.settings[k]}{k==='platform_fee'?'%':''}</div></div>)}</div>
           : <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{Object.entries(settingsFields).map(([l,k])=><div key={k} className="fg"><label className="fl">{l}</label><input className="fi" value={editSettings[k]??''} onChange={e=>setEditSettings(p=>({...p,[k]:e.target.value}))}/></div>)}</div>}
       </div>}
-
       {settingsTab==='features' && <div className="card"><div className="card-title" style={{marginBottom:20}}>Feature Flags</div>
         {D.flags.map(f=><div key={f.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 0',borderBottom:'1px solid #ede5df'}}>
-          <div><div style={{fontWeight:600,color:'#2c1810',fontSize:14}}>{f.name.replace(/_/g,' ')}</div><div style={{fontSize:12,color:'#8a7068'}}>{f.description} Â· {f.applies_to}</div></div>
+          <div><div style={{fontWeight:600,color:'#2c1810',fontSize:14}}>{f.name.replace(/_/g,' ')}</div><div style={{fontSize:12,color:'#8a7068'}}>{f.description} · {f.applies_to}</div></div>
           <div className={`toggle ${f.is_enabled?'on':''}`} onClick={()=>toggleFlag(f.id,!f.is_enabled)}/>
         </div>)}
       </div>}
-
       {settingsTab==='pages' && <div className="card"><div className="card-title" style={{marginBottom:20}}>Platform Pages</div>
         {D.pages.map(p=><div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 0',borderBottom:'1px solid #ede5df'}}>
-          <div><div style={{fontWeight:600,color:'#2c1810'}}>{p.title}</div><div style={{fontSize:12,color:'#8a7068'}}>/{p.slug} Â· {p.is_published?'Published':'Draft'}</div></div>
+          <div><div style={{fontWeight:600,color:'#2c1810'}}>{p.title}</div><div style={{fontSize:12,color:'#8a7068'}}>/{p.slug} · {p.is_published?'Published':'Draft'}</div></div>
           <button className="btn-icon" onClick={()=>openModal('edit-page',p,{id:p.id,title:p.title,content:p.content,slug:p.slug,is_published:p.is_published})}><Icons.Edit /></button>
         </div>)}
       </div>}
-
       {settingsTab==='admins' && <div className="card">
         <div className="card-header"><span className="card-title">Admin Users</span><button className="btn btn-primary btn-sm" onClick={()=>openModal('create-admin')}><Icons.Plus /> Add Admin</button></div>
         <table style={{width:'100%'}}><thead><tr><th style={{textAlign:'left',padding:'8px 0',color:'#8a7068',fontSize:12}}>Name</th><th style={{textAlign:'left',padding:'8px 0',color:'#8a7068',fontSize:12}}>Email</th><th style={{textAlign:'left',padding:'8px 0',color:'#8a7068',fontSize:12}}>Role</th><th style={{textAlign:'left',padding:'8px 0',color:'#8a7068',fontSize:12}}>Status</th></tr></thead><tbody>
@@ -1586,16 +1539,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // ========== MODALS ==========
-  // Fix: was defined as const Modal = () => { } inside the component body.
-  // React created a new function reference on every parent re-render (every keystroke),
-  // causing it to unmount/remount the modal and destroy input focus each time.
-  // Moved to a top-level component (AdminModal) that receives its data via props so
-  // React treats it as the same stable component type across renders.
-
-  // ========== MAIN RENDER ==========
-  // Auth gate
-  if (!authChecked) return <><style>{css}</style><div className="admin"><div style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100%',minHeight:'100vh',color:'#8a7068'}}>Loading...</div></div></>;
+  if (!authChecked) return(<div style={{minHeight:'100vh',background:'#faf7f5',display:'flex',alignItems:'center',justifyContent:'center'}}><style>{css}</style><div style={{display:'flex',gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:4,background:'#c47d5a',animation:`pulse 1.2s ease ${i*.2}s infinite`}}/>)}</div></div>);
 
   if (!authUser) {
     const bp = window.innerWidth >= 640 ? 'wide' : 'narrow';
@@ -1674,7 +1618,7 @@ export default function AdminDashboard() {
   return (
     <>
       <style>{css}</style>
-      {isOffline&&<div role="alert" style={{position:'fixed',top:0,left:0,right:0,zIndex:2100,background:'#c62828',color:'#fff',textAlign:'center',padding:'8px 16px',fontSize:13,fontWeight:600}}>You're offline â€” check your connection</div>}
+      {isOffline&&<div role="alert" style={{position:'fixed',top:0,left:0,right:0,zIndex:2100,background:'#c62828',color:'#fff',textAlign:'center',padding:'8px 16px',fontSize:13,fontWeight:600}}>You're offline — check your connection</div>}
       <div className="admin">
         <Sidebar />
         <div className="main">
